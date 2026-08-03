@@ -11,6 +11,14 @@ from, and `state_counts.py` re-derives every count in Paper I from those rules.
 | --- | --- |
 | **Paper I** | [Rules, Deterministic Dynamics, and Exact State Enumeration (Heads-Up)](redblack-states.pdf) - [source](redblack-states.tex) |
 | **Paper II** | [Counterfactual Regret Minimization on a Decomposed Heads-Up Game](redblack-cfrplus.pdf) - [source](redblack-cfrplus.tex) |
+| **Note 3** | Safe continual re-solving: the composition certificate - [source](redblack-resolving.tex) |
+
+**Status (2026-08-03):** the solver is several generations past what the
+papers report (exact-by-reflection re-solve, measured real-game
+exploitability, belief carrying, a certificate program). The concrete
+revision plan is [`UPDATE_PLAN.md`](UPDATE_PLAN.md); until it lands, read
+Paper II's Results section as the record of the *first* full solve, not
+the current state of play.
 
 ---
 
@@ -80,8 +88,12 @@ python3 state_counts.py
 
 It deliberately does **not** import the solver's combinatorics. It re-derives
 them from `RULES.md`, so agreement with the shipped rules engine is evidence
-rather than tautology. (The cross-check script that runs those counts against
-the engine lives in the game's own repository, which is not public.)
+rather than tautology. `verify_against_engine.py` runs those counts against
+the game's solver (31 cross-checks; requires the game repo's simulator on
+disk, which is not public). `real_game_size.py` counts the perfect-recall
+public history tree of the real game - the object an exact solver of the
+unabstracted game must index; `data/layer-t2.csv` is a per-class dump of
+layer `T'=2`.
 
 ## Building the papers
 
