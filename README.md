@@ -16,7 +16,17 @@ count from those rules.
 | **Paper II** | [Solving the Belief-Reset Abstraction Exactly, and Measuring the Distance to the Real Game](redblack-cfrplus.pdf) - [source](redblack-cfrplus.tex) |
 | **Paper III** | [Belief Carrying, Safe Re-Solving, and the Certificate Problem](redblack-solving-g.pdf) - [source](redblack-solving-g.tex) |
 
-**Status (2026-08-04):** rewritten as a series encapsulating solver
+**Status (2026-08-04, second pass):** restructured for concision and
+clarity per operator review. Paper I is now organized around an explicit
+ladder of four state notions (the Markov dynamics state; the true game
+state of G, which includes every past round's bidding; the public class,
+which is the state of G'; and the rank-one belief bridge between them,
+with G' formally defined as Paper I Def. 10.6). Paper II opens with G'
+and its three measured surprises, defines every meter (including TV and
+eps_G) before use, and cites CFR+ instead of re-deriving it. Paper III
+carries a self-contained preliminaries section and reads as a research
+paper rather than a program ledger. All cross-paper references were
+re-verified against the fresh .aux files. The series encapsulates solver
 generations v2-v6. Headlines: the real game has exactly 2.448e33
 perfect-recall infosets (counted, not estimated); the abstraction's value
 is 51.22% to the opener; the solved profile's real-game exploitability is

@@ -68,38 +68,31 @@
 
 \begin{abstract}
 \noindent
-Red/Black is a hidden-information bidding game played over a shared
-$52$-card deck in which only color matters. This paper gives a complete
-formal account of the two-player game as a \emph{deterministic, acyclic
-finite transition system}: we specify the state set, input alphabet,
-transition function, initial states and final states, and we count each of
-them exactly. Three results organize the account. First, once the deal is
-fixed the game is fully deterministic --- all chance is confined to the
-initial state --- and the transition graph is acyclic, so every play
-terminates in between $5$ and $9$ rounds. Second, the order in which cards
-are flipped during a contest is irrelevant to the state, which collapses
-procurement from a tree of flip sequences to a small lattice on two
-counters. Third, the public projection of the state --- what an observer
-knows --- reduces to two integers per seat, giving $6{,}051$ public
-classes, of which exactly $5{,}485$ are reachable; the pruning is
-concentrated almost entirely in one layer, where $59\%$ of the enumerable
-classes cannot occur. We then characterize what that projection throws
-away: it pins down the support of the public posterior exactly, but not its
-shape, so two histories arriving at the same public state can leave an
-observer with materially different beliefs. We then measure the object the
-projection summarizes: the real game's public history tree has
-$5.3\times10^{34}$ decision histories and exactly
+Red/Black is a two-player bidding game played over a shared $52$-card deck
+in which only color matters. We give a complete formal account of the
+heads-up game and count everything in it exactly. The account is organized
+as a ladder of four descriptions of where the game stands, in decreasing
+order of detail. First, the dynamics state: hands plus the current round's
+bids and flips. This is the state that drives the rules; it is finite,
+deterministic once the deal is fixed, and acyclic, so every game lasts five
+to nine rounds. Second, the history: the full public record since the deal,
+including every past round's bidding. Strategies and beliefs may condition
+on all of it, so it is the true state of the game $G$, and it is enormous:
+$5.3\times10^{34}$ public decision histories and exactly
 $2{,}448{,}351{,}139{,}319{,}171{,}077{,}272{,}326{,}424{,}233{,}304$
-perfect-recall infosets --- thirty orders of magnitude beyond the class
-space --- so no method can engage it by tabulation. Finally we prove that
-the beliefs the class forgets are not formless: under any strategy
-profile, every reachable posterior factorizes over the class prior into
-two per-seat tilts, giving the game a finite-dimensional belief state
-whose shape is strategy-independent. Every count in this paper is
-machine-verified against the shipped rules engine. Two companion papers
-build on it: one solves the class abstraction exactly and measures what
-the projection costs in play; the other uses the belief family to engage
-the real game.
+perfect-recall information sets at hand size five. Third, the public class:
+two certainty bounds per seat plus the identity of the pending discarder,
+$6{,}051$ classes of which $5{,}485$ are reachable. The class records
+exactly what is publicly known (it pins the support of any posterior) and
+none of what is believed (its shape). Fourth, the bridge between the second
+and third rungs: under any strategy profile, the posterior at a round
+boundary factorizes as the class prior times two per-seat likelihood tilts,
+so the belief-relevant content of an arbitrarily long history compresses
+without loss into the class and two short vectors. The companion papers
+stand on the two ends of this ladder: Paper~II solves the abstraction $G'$
+obtained by forgetting the tilts and measures what the forgetting costs;
+Paper~III carries the tilts and pursues a certified bound for $G$ itself.
+Every count is machine-verified against the shipped rules engine.
 \end{abstract}
 
 \section{Introduction}
@@ -113,74 +106,58 @@ cards by flipping them, one at a time, off the top of any player's deck.
 Fail, and you discard a card. Run out of cards and you are eliminated.
 
 The game is small enough to be understood completely and large enough to be
-interesting. This paper does the first half of that job: it describes the
-game exactly, formalizes it as a finite transition system, and counts
-everything. It deliberately says nothing about how to \emph{play} well.
-Strategy, equilibrium and the algorithms that approximate it are the
-subject of two companion papers --- Paper~II solves the class abstraction
-exactly and measures its cost; Paper~III engages the real game --- and
-here we build the object those algorithms run on.
+interesting. This paper describes the game exactly, formalizes its dynamics
+as a finite transition system, and counts everything. Strategy, equilibrium
+and the algorithms that approximate it are the subject of two companion
+papers; this paper builds the objects those algorithms run on.
+
+The account is organized as a ladder of four descriptions of the state of a
+game in progress, in decreasing order of detail: the \emph{dynamics state}
+that drives the rules (hands plus the current round's bids and flips); the
+\emph{history}, on which strategies and beliefs may lawfully condition, and
+which is the true state of the game $G$; the \emph{public class}, a small
+integer summary that captures exactly what is publicly known; and the
+\emph{rank-one bridge}, by which the belief content of a history compresses
+losslessly to the class plus two per-seat tilt vectors.
+Section~\ref{sec:ladder} states the ladder precisely and points each rung
+to the section that develops it.
 
 \paragraph{Scope.} We restrict throughout to the \textbf{heads-up} ($N=2$)
-game. The rules in Section~\ref{sec:rules} are stated for two players; where
-a rule generalizes awkwardly we say so. All counting is heads-up.
+game. The rules in Section~\ref{sec:rules} are stated for two players;
+where a rule generalizes awkwardly we say so. All counting is heads-up.
 
 \paragraph{Contributions.}
 \begin{enumerate}\itemsep2pt
-  \item A complete formal specification of Red/Black as a deterministic
-        transition system, with an explicit account of where the
-        randomness lives and what the automaton does \emph{not} capture
-        (Section~\ref{sec:automaton}).
-  \item Termination and acyclicity theorems: the heads-up game lasts
-        between $5$ and $9$ rounds, and no state is ever revisited
-        (Theorems~\ref{thm:acyclic} and~\ref{thm:rounds}).
-  \item An order-irrelevance lemma for procurement
-        (Lemma~\ref{lem:order}) that collapses the contest phase from a
-        tree of flip sequences to a lattice on two counters, and the exact
-        node counts that follow (Section~\ref{sec:round}).
-  \item Exact enumeration of the public state space: a closed form
-        $\binom{H+3}{3}-1$ for the per-seat public statistic, hence
-        $6{,}051$ public classes at hand size $H=5$
-        (Section~\ref{sec:full}).
-  \item An exact reachability closure showing only $5{,}485$ of those
-        $6{,}051$ classes can occur, with the obstruction identified and
-        proved (Section~\ref{sec:reach}).
-  \item A characterization of what the public state \emph{omits}: the
-        bounds describe the support of the public posterior exactly
-        (Theorem~\ref{thm:support}) but not its shape, and two histories
-        reaching the same class can leave an observer with materially
-        different beliefs (Section~\ref{sec:forgets}).
-  \item Exact enumeration of the \emph{real} game: $5.3\times10^{34}$
-        public decision histories and $2.4\times10^{33}$ perfect-recall
-        infosets at $H=5$, counted exactly (not estimated) by a
-        recurrence whose opponent-realizability test is
-        Theorem~\ref{thm:support} itself, validated by explicit joint
-        enumeration at small hand sizes (Section~\ref{sec:realsize}).
-  \item The rank-one factorization of reachable beliefs: under any
-        strategy profile the public posterior at a boundary is the class
-        prior times two per-seat tilts (Theorem~\ref{thm:rankone}), with
-        opponent-model-free own-side conditionals
-        (Corollary~\ref{cor:modelfree}) --- the structural fact the
-        companion papers' belief tracking and safe re-solving stand on
-        (Section~\ref{sec:belieffamily}).
+  \item A complete formal specification of Red/Black as a deterministic,
+        acyclic transition system (Section~\ref{sec:automaton}).
+  \item Termination bounds: the heads-up game lasts between $5$ and $9$
+        rounds and never revisits a state (Theorems~\ref{thm:acyclic}
+        and~\ref{thm:rounds}).
+  \item An order-irrelevance lemma (Lemma~\ref{lem:order}) collapsing
+        procurement from a tree of flip sequences to a lattice on two
+        counters (Section~\ref{sec:round}).
+  \item A closed form $\binom{H+3}{3}-1$ for the per-seat public statistic,
+        hence $6{,}051$ public classes at hand size $H=5$
+        (Section~\ref{sec:public}).
+  \item An exact reachability closure: $5{,}485$ of the $6{,}051$ classes
+        occur, with the obstruction identified and proved
+        (Section~\ref{sec:reach}).
+  \item Support completeness: the class pins the support of the public
+        posterior exactly, though not its shape (Theorem~\ref{thm:support}).
+  \item Exact size of the true game $G$: $5.3\times10^{34}$ public decision
+        histories and $2.4\times10^{33}$ perfect-recall infosets at $H=5$,
+        counted rather than estimated (Section~\ref{sec:realsize}).
+  \item The rank-one factorization of reachable beliefs
+        (Theorem~\ref{thm:rankone}), with opponent-model-free own-side
+        conditionals (Corollary~\ref{cor:modelfree}).
 \end{enumerate}
 
 \paragraph{Reproducibility.}
-Every numeral in this paper is produced by \code{state\_counts.py}, which
-re-derives the combinatorics from the rules independently of the game
-engine, and cross-checked against the shipped engine by
-\code{verify\_against\_engine.py}. Both accompany this document.
-
-\paragraph{Road map.} Section~\ref{sec:rules} states the rules.
-Section~\ref{sec:automaton} builds the automaton. We then climb a ladder of
-three games, identical in rules and differing only in how many cards each
-player is dealt: the one-card game (Section~\ref{sec:h1}), small enough to
-draw in full; the two-card game (Section~\ref{sec:h2}), the smallest game
-with a real bidding ladder and a real discard choice; and the actual
-five-card game (Section~\ref{sec:full}). Section~\ref{sec:reach} settles
-reachability, Section~\ref{sec:forgets} examines what the public state
-deliberately throws away, and Section~\ref{sec:next} hands off to the
-companion paper.
+Two scripts, \code{state\_counts.py} and \code{real\_game\_size.py},
+regenerate every numeral in this paper from the rules, independently of
+the game engine. \code{verify\_against\_engine.py} cross-checks the
+counts against the shipped engine. All three scripts accompany this
+document (Appendix~\ref{app:repro}).
 
 \paragraph{Notation.} Symbols are fixed for the whole paper and collected
 in Table~\ref{tab:notation}. Seats are always $0$ and $1$, and $i$ always
@@ -188,9 +165,9 @@ ranges over them. Two conventions prevent collisions: lower bounds always
 carry the $\mathrm{lb}$ subscript, so $b_i$ (blacks held) is never confused
 with $\blb^{\,i}$ (blacks known to be held); and bid counts are written $k$
 or $\kappa$, never $b$. A primed symbol always means ``after the pending
-discard'' --- the distinction is the subject of Section~\ref{sec:twoclocks},
-and it is the one place where the rules' ordering and the analysis' ordering
-disagree.
+discard''; the distinction is the subject of Section~\ref{sec:twoclocks},
+and it is the one place where the rules' ordering and the analysis'
+ordering disagree.
 
 \begin{table}[htbp]
 \centering
@@ -236,7 +213,7 @@ One shared deck of $52$ cards, exactly $26$ \textcolor{rbred}{red} and $26$
 \textcolor{rbblack}{black}. Suits and ranks do not exist: a card's only
 attribute is its color. Each of the two players is dealt $H=5$ cards; the
 remaining $52-2H=42$ cards are removed from the game and never seen by
-anyone. Hands only ever shrink --- no card is drawn after the deal.
+anyone. Hands only ever shrink; no card is drawn after the deal.
 
 A player's hand is an \emph{ordered} list. Index $0$ is the top of the
 deck: the first card that will be flipped if someone procures from it.
@@ -261,11 +238,11 @@ A round has four phases, in order.
         changes within a round. Passing is not a legal move.
   \item[\textbf{3.}] \textbf{Procurement.} A challenge ends bidding. The
         last bidder must now produce the claim. They repeatedly flip the
-        top card of \emph{either} player's deck --- their own or the
-        opponent's, switching freely --- and each flipped color is
-        revealed publicly. The first off-color flip is fatal: the bidder
-        loses immediately. Reaching the claimed count of on-color cards
-        wins: the challenger loses.
+        top card of \emph{either} player's deck (their own or the
+        opponent's, switching freely), and each flipped color is revealed
+        publicly. The first off-color flip is fatal: the bidder loses
+        immediately. Reaching the claimed count of on-color cards wins:
+        the challenger loses.
   \item[\textbf{4.}] \textbf{Discard.} The loser of the contest secretly
         removes one card from their hand. The identity of that card is
         never revealed. If the loser holds exactly one card, the discard is
@@ -320,45 +297,82 @@ Two rules do most of the work in this paper.
 Together these mean no \emph{card identity} survives a round boundary. What
 survives is strictly weaker: multiset knowledge, degraded by discards. If
 you saw two reds flipped from my hand, you know I hold at least two reds
---- until I discard, at which point you know only that I hold at least one,
-because the card I dropped may have been one of them. We make this precise
-in Section~\ref{sec:public}.
+until I discard; after that you know only that I hold at least one, because
+the card I dropped may have been one of them. We make this precise in
+Section~\ref{sec:public}.
 
 % =========================================================================
-\section{The Game as a Deterministic Transition System}\label{sec:automaton}
+\section{Four Descriptions of the State}\label{sec:ladder}
 
-\subsection{Is it a finite state machine?}
+The paper is organized around four descriptions of where a game of
+Red/Black stands. They are listed here in decreasing order of detail, and
+each later section develops one rung.
 
-Yes, with one clarification worth making carefully, because the phrase
-``hidden information'' suggests otherwise.
+\paragraph{(i) The dynamics state.} The tuple that makes the rules run:
+both hands, the current round's bid chain, and the flip record of the
+current contest. This is the minimal state for which every transition is a
+function of the state and the acting player's move. Past rounds genuinely
+do not affect the dynamics: a cleared bid chain and a departed discard
+change no legal move and no transition.
+Section~\ref{sec:automaton} formalizes this state, proves the transition
+system deterministic and acyclic, and derives the round bounds;
+Sections~\ref{sec:round} and~\ref{sec:public} count its round structure
+and its public projection.
+
+\paragraph{(ii) The true game state.} The full public history since the
+deal, including every past round's bidding and flips, paired with each
+seat's private trajectory. Nothing in the rules erases that record from the
+players' minds, so strategies and beliefs may lawfully condition on all of
+it. This is the state notion of the real game $G$, and its count is the
+headline of the paper: $5.3\times10^{34}$ public decision histories and
+$2.448\times10^{33}$ perfect-recall information sets at hand size five
+(Section~\ref{sec:realsize}).
+
+\paragraph{(iii) The public class.} Two certainty bounds per seat plus the
+identity of the pending discarder. The class is support-complete: it
+determines exactly which hands are possible (Theorem~\ref{thm:support}).
+It is belief-incomplete: it does not determine how likely each possible
+hand is. It is the state notion of the abstraction $G'$
+(Definition~\ref{def:gprime}) that Paper~II solves.
+Sections~\ref{sec:public} and~\ref{sec:reach} define and count it:
+$6{,}051$ classes, of which $5{,}485$ are reachable.
+
+\paragraph{(iv) The bridge.} A rank-one factorization connects rungs (ii)
+and (iii): under any strategy profile, the posterior at a round boundary is
+the class prior times two per-seat likelihood tilts
+(Theorem~\ref{thm:rankone}). The belief-relevant content of an arbitrarily
+long history therefore compresses losslessly to the class plus two short
+vectors. Section~\ref{sec:forgets} proves this and measures what
+discarding the tilts costs.
+
+Paper~II solves $G'$, and Paper~III carries the tilts toward a certified
+bound for $G$ itself.
+
+% =========================================================================
+\section{The Dynamics as a Deterministic Transition System}
+\label{sec:automaton}
+
+This section builds rung (i): the state that drives the rules.
+
+\subsection{Determinism and hidden information}
 
 A deterministic finite automaton is a tuple $(\Q,\Sig,\dtrans,q_0,F)$ with
-$\dtrans:\Q\times\Sig\to\Q$ a \emph{function} --- one input, one successor,
-no coin flips. Red/Black satisfies this once we are careful about two
-things:
-
-\begin{enumerate}\itemsep2pt
-  \item \textbf{The randomness is in the initial state, not the
-        transitions.} The deal is the only chance event in the entire game.
-        Fix it, and every subsequent transition is a deterministic function
-        of the current state and the acting player's move. So Red/Black is
-        a \emph{family} of deterministic automata indexed by the deal, or
-        equivalently one automaton whose first input letter is the deal.
-  \item \textbf{Hidden information is a property of the observers, not of
-        the machine.} The state is perfectly well defined at all times; it
-        is simply that neither player can see all of it. Formally, hidden
-        information is an \emph{equivalence relation on $\Q$}
-        (Section~\ref{sec:partition}), layered on top of a machine that is
-        itself deterministic.
-\end{enumerate}
-
-So the intuition is right. The machine is deterministic. What a finite
-state machine does not by itself express is who can distinguish which
-states --- and that is exactly the structure the companion paper needs.
+$\dtrans:\Q\times\Sig\to\Q$ a \emph{function}: one input, one successor, no
+coin flips. The phrase ``hidden information'' suggests Red/Black cannot be
+such a machine, but it is, once two points are settled. First, the
+randomness sits in the initial state rather than the transitions. The deal
+is the only chance event in the entire game; fix it, and every subsequent
+transition is a deterministic function of the current state and the acting
+player's move, so Red/Black is a family of deterministic automata indexed
+by the deal. Second, hidden information is a property of the observers
+rather than of the machine. The state is well defined at all times even
+though neither player can see all of it; formally, hidden information is an
+equivalence relation on $\Q$ (Section~\ref{sec:partition}), layered on top
+of a machine that is itself deterministic.
 
 \subsection{The state}
 
-\begin{definition}[Game state]\label{def:state}
+\begin{definition}[Dynamics state (Markov state)]\label{def:state}
 A state is a tuple
 \[
   q \;=\; \bigl(\rho,\; \sigma,\; h_0,\; h_1,\; \beta,\; \nu,\;
@@ -382,14 +396,15 @@ We write $n_i=|h_i|$ for hand sizes and $T=n_0+n_1$ for the total cards in
 play.
 \end{definition}
 
-\begin{remark}[What is deliberately absent]\label{rem:absent}
+\begin{remark}[What the dynamics state omits, and why]\label{rem:absent}
 The state carries no record of \emph{which} cards have been discarded, nor
-of past rounds' bids or flips. Neither affects any player's legal moves or
-any future transition: discarded cards are gone from play, and a past
-round's bid history is cleared. They affect only what the players
-\emph{believe}, which is the subject of Section~\ref{sec:partition} and of
-the companion paper. Keeping them out of $\Q$ is what makes the state space
-finite and small.
+of past rounds' bids or flips, because no transition reads them: discarded
+cards are gone from play, and a bid chain is cleared when its round
+resolves. Omitting them is what makes this state space finite and small.
+They are not absent from the \emph{game}. Players remember past bids and
+flips and may condition strategy and belief on them, so they belong to the
+true state of $G$, rung (ii) of Section~\ref{sec:ladder};
+Section~\ref{sec:realsize} counts what keeping them costs.
 \end{remark}
 
 \subsection{The input alphabet}
@@ -457,9 +472,8 @@ successor is a function of $(q,a)$ alone.
 \end{proof}
 
 The subtle point is in \textsc{proc}: the flipped card looks random to the
-players, but it is not random to the machine. It was fixed at the deal and
-positioned at the last reorder. Uncertainty here is epistemic, not
-stochastic.
+players, but it was fixed at the deal and positioned at the last reorder.
+The uncertainty is epistemic rather than stochastic.
 
 \begin{theorem}[Acyclicity]\label{thm:acyclic}
 The transition graph is acyclic.
@@ -495,12 +509,11 @@ that bound is achieved by alternating losses.
 Total cards in play is a strictly decreasing round counter running
 $2H,\,2H-1,\,\dots$ down to the terminal value, so it is a natural index for
 induction over the game. Section~\ref{sec:twoclocks} fixes precisely which
-version of that count we index by --- the one measured \emph{during} a
-round rather than at its boundary --- and calls it $T'$.
+version of that count we index by, the one measured \emph{during} a round
+rather than at its boundary, and calls it $T'$.
 \end{corollary}
 
-\subsection{What the automaton omits: the information partition}
-\label{sec:partition}
+\subsection{The information partition}\label{sec:partition}
 
 \begin{definition}[Observation and indistinguishability]
 Let $\mathrm{obs}_i(q)$ be the part of $q$ visible to seat $i$: the phase,
@@ -511,25 +524,20 @@ The classes of $\sim_i$ are seat $i$'s \emph{information sets}.
 \end{definition}
 
 $\sim_i$ is what makes Red/Black a game rather than a puzzle, and it is
-invisible to $(\Q,\Sig,\dtrans,q_0,F)$. Two facts about it matter here:
-
-\begin{enumerate}\itemsep2pt
-  \item \textbf{Perfect recall} holds: a player never forgets their own
-        past observations or moves. This is what licenses the algorithms of
-        the companion paper.
-  \item \textbf{The public projection}, $\mathrm{pub}(q)$ --- everything
-        both players see --- is far smaller than $q$, and at round
-        boundaries it collapses to just four integers.
-        Section~\ref{sec:public} derives it, and it is the object the whole
-        second half of this paper counts.
-\end{enumerate}
+invisible to $(\Q,\Sig,\dtrans,q_0,F)$. Perfect recall holds: a player
+never forgets their own past observations or moves. The public projection
+$\mathrm{pub}(q)$, the part of $q$ both players see, is far smaller than
+$q$, collapsing at round boundaries to just four integers
+(Section~\ref{sec:public}). The information sets of the full game $G$ are
+equivalence classes of \emph{histories} rather than of dynamics states;
+Section~\ref{sec:realsize} counts them.
 
 % =========================================================================
-\section{The Round Automaton}\label{sec:round}
+\section{The Round Graph}\label{sec:round}
 
-Before climbing the ladder of games we isolate the structure of a
-\emph{single} round, which is independent of the deal and depends only on
-the starter $\sigma$ and the hand sizes $(n_0,n_1)$.
+Before counting whole games we isolate the structure of a \emph{single}
+round, which is independent of the deal and depends only on the starter
+$\sigma$ and the hand sizes $(n_0,n_1)$.
 
 \subsection{Bidding}
 
@@ -551,10 +559,10 @@ there are $2^T-1$ non-empty subsets of $\{1,\dots,T\}$ and two colors.
 
 So $T=2$ gives $7$ states, $T=4$ gives $31$, and the full game's opening
 round ($T=10$) gives $2{,}047$. The seat to act at a chain of length $m$ is
-$\sigma$ if $m$ is even and $1-\sigma$ otherwise; the bidder --- the seat
-that will have to produce the claim --- is whoever placed the last bid.
+$\sigma$ if $m$ is even and $1-\sigma$ otherwise; the bidder, the seat that
+will have to produce the claim, is whoever placed the last bid.
 
-\begin{remark}[A constraint we will need]\label{rem:ladder}
+\begin{remark}[A constraint used later]\label{rem:ladder}
 Because the starter bids first and counts strictly increase, a
 \emph{non-starter} can only be the bidder if at least two bids were placed,
 which forces the final count to be at least $2$. A final count of $1$ pins
@@ -578,10 +586,9 @@ down, so which cards remain is likewise determined by the counters alone.
 Two flip sequences with the same counters therefore yield identical states.
 \end{proof}
 
-Lemma~\ref{lem:order} is what makes the game tractable: procurement is a
-\emph{lattice} on two counters, not a tree of flip sequences. A naive
-sequence count at $T=10$ would be exponential in the number of flips; the
-lattice is quadratic.
+Lemma~\ref{lem:order} reduces procurement from a tree of flip sequences to
+a \emph{lattice} on two counters. A naive sequence count at $T=10$ would be
+exponential in the number of flips; the lattice is quadratic.
 
 A second, independent collapse applies to the \emph{orderings} themselves.
 
@@ -625,21 +632,17 @@ single-color hand admits one.
 \end{proof}
 
 \begin{remark}[Size of the collapse]\label{rem:ordersave}
-The saving needs $n\ge 4$ to appear at all --- for $n\le 3$,
-$\binom{n}{r}=F$ exactly --- and is capped at $50\%$ per composition
-($\binom{5}{2}=10\to 5$). Balanced hands save; lopsided ones
-($r\in\{0,1,n-1,n\}$) save nothing. Summed over every reachable private
-state of the full game the reduction is $12\%$
-($172{,}488\to 150{,}964$), but it is worth more than that in practice
-because it grows with depth --- $0\%$ at $T'\le 4$, $15\%$ at $T'=8$,
-$24\%$ at $T'=9$, $31\%$ at the root --- and the deep layers hold most of
-the work. Weighted by how many decisions actually sit in each layer it is
-about $19\%$; the companion paper tabulates those weights.
-
-Note this is a \emph{lossless} collapse, like Lemma~\ref{lem:order} and
-unlike the belief abstraction of Section~\ref{sec:forgets}: merged
-orderings are indistinguishable in every continuation, so nothing is
-approximated.
+The saving needs $n\ge 4$ to appear at all (for $n\le 3$,
+$\binom{n}{r}=F$ exactly) and is capped at $50\%$ per composition
+($\binom{5}{2}=10\to 5$); lopsided hands ($r\in\{0,1,n-1,n\}$) save
+nothing. Summed over every reachable private state of the full game the
+reduction is $12\%$ ($172{,}488\to 150{,}964$), growing with depth from
+$0\%$ at $T'\le 4$ through $15\%$ at $T'=8$ and $24\%$ at $T'=9$ to
+$31\%$ at the root; weighted by how many decisions sit in each layer it
+is about $19\%$ (Paper~II tabulates the weights). The collapse is
+\emph{lossless}, like Lemma~\ref{lem:order} and unlike the belief
+abstraction of Section~\ref{sec:forgets}: merged orderings are
+indistinguishable in every continuation.
 \end{remark}
 
 \begin{lemma}[Procurement node count]\label{lem:proccount}
@@ -692,16 +695,16 @@ $x+y\le \kappa-1=2$ nodes are live.}
 
 Every contest ends in one of two ways, and the resolution records enough to
 continue the game: the color and chain, the final counters, whether the
-loser was the bidder, and --- when the bidder busted --- which deck the
-fatal card came off. That last datum matters because it tells observers
-whose hand certainly contains an off-color card.
+loser was the bidder, and, when the bidder busted, which deck the fatal
+card came off. That last datum matters because it tells observers whose
+hand certainly contains an off-color card.
 
 Table~\ref{tab:round} collects the three counts for the hand-size
 configurations used later.
 
 \begin{table}[t]
 \centering
-\caption{The round automaton, per $(n_0,n_1)$. Counts are independent of the
+\caption{The round graph, per $(n_0,n_1)$. Counts are independent of the
 starter, and every entry is verified against the shipped graph builder.}
 \label{tab:round}
 \begin{tabular}{@{}lrrrr@{}}
@@ -717,20 +720,19 @@ $(3,5)$ \quad a later round & $8$  & $511$   & $10{,}398$ & $18{,}588$\\
 \end{table}
 
 % =========================================================================
-\section{The Public State at a Round Boundary}\label{sec:public}
+\section{The Public Class at a Round Boundary}\label{sec:public}
 
-We now derive the projection $\mathrm{pub}(q)$ that both players share. It
-is the single most useful object in the paper.
+We now derive the projection $\mathrm{pub}(q)$ that both players share.
 
 \subsection{What survives a round}
 
 Fix the moment a contest resolves: the loser is known, but has not yet
 discarded. Call this a \emph{boundary}. By the rules of
-Section~\ref{sec:info}, an observer at a boundary knows: both hand sizes,
-who lost, and --- from the flips just seen, plus memory of earlier rounds
---- a lower bound on how many cards of each color each seat certainly
-still holds. Nothing else about cards survives, because discard anonymity
-and reorder scrambling destroy identity.
+Section~\ref{sec:info}, an observer at a boundary knows both hand sizes,
+who lost, and, from the flips just seen plus memory of earlier rounds, a
+lower bound on how many cards of each color each seat certainly still
+holds. Nothing else about cards survives, because discard anonymity and
+reorder scrambling destroy identity.
 
 \begin{definition}[Public class]\label{def:class}
 A boundary's public state is
@@ -776,9 +778,9 @@ $\to$ \emph{discard}: the discard is the \emph{last} thing that happens
 (Section~\ref{sec:rules}, Figure~\ref{fig:phases}). That is the right
 description of the game as played.
 
-\textbf{But the natural place to cut the game is not the same place.} We cut
-at a \emph{boundary} --- a procurement resolution, where the loser is known
-but has not yet discarded --- because that is the moment at which the public
+\textbf{But the natural place to cut the game is not the same place.} We
+cut at a \emph{boundary}, a procurement resolution where the loser is known
+but has not yet discarded, because that is the moment at which the public
 state is a clean summary. Cutting there means the segment between two
 consecutive boundaries reads \emph{discard} $\to$ reorder $\to$ bidding
 $\to$ procurement: the discard is now the \emph{first} thing that happens.
@@ -855,17 +857,17 @@ is what makes the class space a clean DAG with exactly one edge per round
 (Figure~\ref{fig:layerdag}). Indexing by $T$ would not.
 \end{remark}
 
-Two consequences worth stating plainly, because both are easy to misread:
+Two consequences are easy to misread, so we state them plainly.
 
 \begin{itemize}\itemsep2pt
   \item A boundary's hand sizes $n_i$ are \emph{pre}-discard. A seat listed
         with $n_i=1$ is about to be eliminated, not already gone.
-  \item Everything in Section~\ref{sec:round}, the round automaton, is
-        expressed in the sizes that hold \emph{during} the round --- so a
-        round reached from a boundary uses $n_i'$ and $T'$ there, not $n_i$
-        and $T$. Read in isolation, Section~\ref{sec:round} describes a
-        generic round and the primes are unnecessary; read as the successor
-        of a boundary, they matter.
+  \item Everything in Section~\ref{sec:round}, the round graph, is
+        expressed in the sizes that hold \emph{during} the round. A round
+        reached from a boundary therefore uses $n_i'$ and $T'$ there, not
+        $n_i$ and $T$. Read in isolation, Section~\ref{sec:round} describes
+        a generic round and the primes are unnecessary; read as the
+        successor of a boundary, they matter.
 \end{itemize}
 
 \subsection{Counting public classes}
@@ -905,35 +907,36 @@ Theorem~\ref{thm:acyclic}, $T'$ strictly decreases from one boundary to the
 next, so the class space is a layered directed acyclic graph.
 
 % =========================================================================
-\section{Warm-Up I: The One-Card Game}\label{sec:h1}
+\section{Small Games}\label{sec:small}
 
-Deal each player a single card from the real $52$-card deck. Everything
-else is unchanged. The game lasts exactly one round
-(Theorem~\ref{thm:rounds} with $H=1$), and it is small enough to write down
-completely.
+Two scaled-down games, identical in rules but dealt $H=1$ and $H=2$ cards,
+are small enough to enumerate by brute force. They serve as checkpoints for
+the closed forms of Sections~\ref{sec:round} and~\ref{sec:public}, for the
+closure of Section~\ref{sec:reach}, and for the infoset recurrence of
+Section~\ref{sec:realsize}, which is validated against explicit joint
+enumeration at exactly these two sizes.
 
-\subsection{Deals}
+\subsection{The one-card game}
 
-There are $52\cdot 51=2{,}652$ card-level deals. Only color matters, so
-strategically there are $4$ outcomes, with
+Deal each player a single card from the real $52$-card deck. The game lasts
+exactly one round (Theorem~\ref{thm:rounds} with $H=1$). There are
+$52\cdot 51=2{,}652$ card-level deals and four color outcomes, with
 \[
   \Pr[\text{both red}] = \Pr[\text{both black}] = \tfrac{26\cdot 25}{52\cdot 51}
   = \tfrac{25}{102},\qquad
-  \Pr[\text{different}] = \tfrac{2\cdot 26\cdot 26}{52\cdot 51} = \tfrac{26}{51}.
+  \Pr[\text{different}] = \tfrac{2\cdot 26\cdot 26}{52\cdot 51} = \tfrac{26}{51}
+  \approx 0.5098 .
 \]
-Note $\Pr[\text{different}]=\tfrac{26}{51}\approx 0.5098>\tfrac12$: the two
-cards are slightly \emph{anti}-correlated, because they are drawn without
-replacement from a balanced deck. This tiny asymmetry is not an artefact;
-it is the seed of all card-counting in the full game.
-
-\subsection{The automaton in full}
-
-With $T=2$, Lemma~\ref{lem:bidcount} gives $2^3-1=7$ bidding states. The
-opener may claim $1$ or $2$ of either color. A claim of $2$ cannot be
-raised (the count is already at the cap), so it must be challenged. A claim
-of $1$ may be raised to $2$, after which the opener must challenge.
-Figure~\ref{fig:h1bid} draws the whole bidding phase for one color; the
-other color is an exact mirror.
+The two cards are slightly \emph{anti}-correlated, because they are drawn
+without replacement from a balanced deck; the same effect seeds all
+card-counting in the full game. With $T=2$, Lemma~\ref{lem:bidcount} gives
+$7$ bidding states, and procurement adds $14$ states and $28$ resolutions
+(Table~\ref{tab:round}). Figure~\ref{fig:h1bid} draws the whole bidding
+phase for one color; the other color is an exact mirror. On the public
+side, Theorem~\ref{thm:seatcount} gives $K(1)=3$ and
+Corollary~\ref{cor:classcount} gives $19$ classes; exhaustive forward
+search (Section~\ref{sec:reach}) finds $28$ concrete boundary states
+realizing $17$ of the $19$.
 
 \begin{figure}[t]
 \centering
@@ -959,108 +962,41 @@ states, matching Lemma~\ref{lem:bidcount}.}
 \label{fig:h1bid}
 \end{figure}
 
-Procurement adds $14$ states and $28$ distinct resolutions
-(Table~\ref{tab:round}). A claim of $1$ resolves on the very first flip. A
-claim of $2$ admits the three counter pairs $(0,0),(1,0),(0,1)$ before
-resolving.
-
-\subsection{Public classes}
-
-With $H=1$, Theorem~\ref{thm:seatcount} gives $K(1)=3$ per-seat statistics
---- $(1,0,0)$, $(1,1,0)$, $(1,0,1)$ --- and Corollary~\ref{cor:classcount}
-gives $2\cdot 9+1=19$ classes. Exhaustive forward search
-(Section~\ref{sec:reach}) finds $28$ concrete boundary states realizing
-$17$ of those $19$.
-
 \begin{example}[The two impossible classes]\label{ex:h1impossible}
 The two unreachable classes are $\seat{0}=\seat{1}=(1,0,0)$, for either
-loser: a boundary at which \emph{nothing at all} is publicly known about
-either card. It cannot occur, because a contest cannot resolve without at
-least one flip --- the bidder must either produce a card or bust on one ---
-and every flip is public. This is Lemma~\ref{lem:atleastone}.
-
-It is worth noting what is \emph{not} excluded. One might guess that
-$\seat{0}=\seat{1}=(1,0,1)$ --- both seats known to hold a black --- is
-impossible, on the grounds that under a red claim only one black can ever
-be revealed. But the claim need not be red: under a \emph{black} claim of
-$2$, the bidder flips one black off each deck, makes the bid, and both
-bounds rise together. The class is reachable. Fixing the bid color too
-early is the standard way to get these arguments wrong, and we return to it
-in Remark~\ref{rem:trap}.
+loser: a boundary at which nothing at all is publicly known about either
+card. It cannot occur, because a contest cannot resolve without at least
+one public flip (Lemma~\ref{lem:atleastone}). By contrast
+$\seat{0}=\seat{1}=(1,0,1)$, both seats known to hold a black, might look
+impossible on the grounds that under a red claim only one black can ever be
+revealed. The claim need not be red: under a black claim of $2$, the bidder
+flips one black off each deck, makes the bid, and both bounds rise
+together. Fixing the bid color too early is the standard way to get such
+arguments wrong (Remark~\ref{rem:trap}).
 \end{example}
 
-% =========================================================================
-\section{Warm-Up II: The Two-Card Game}\label{sec:h2}
+\subsection{The two-card game}
 
-Now deal two cards each. Three genuinely new things appear: a bidding
-ladder with room to maneuver, a discard that is a real \emph{choice}
-rather than a forced elimination, and therefore a second round --- the
-first time the game recurses into a smaller copy of itself.
+At $H=2$ three new features appear: a bidding ladder with room to maneuver,
+a discard that is a genuine choice rather than a forced elimination, and a
+second round, the first time the game recurses into a smaller copy of
+itself. There are $\binom{52}{2}\binom{50}{2}=1{,}624{,}350$ card-level
+deals and $9$ color outcomes $(r_0,r_1)\in\{0,1,2\}^2$, and the game lasts
+$2$ or $3$ rounds (Theorem~\ref{thm:rounds}). The opening round has
+$2^5-1=31$ bidding states, $190$ procurement states and $348$ resolutions,
+matching Table~\ref{tab:round}. On the public side, $K(2)=9$ gives
+$2\cdot 81+1=163$ classes; forward search realizes $149$ of them across
+$345$ concrete boundary states (Table~\ref{tab:reach}).
 
-\subsection{Deals and rounds}
-
-There are $\binom{52}{2}\binom{50}{2}=1{,}624{,}350$ card-level deals and
-$9$ color outcomes $(r_0,r_1)\in\{0,1,2\}^2$. By
-Theorem~\ref{thm:rounds} the game lasts $2$ or $3$ rounds.
-
-\subsection{Structure}
-
-With $T=4$ the opening round has $2^5-1=31$ bidding states, $190$
-procurement states and $348$ resolutions. The chain lattice is now
-non-trivial: an opener claiming $1$ can be raised to $2$, $3$ or $4$, each
-of which can be raised again, and so on.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[x=21mm,y=-9mm, every node/.style={font=\scriptsize}]
-  \node[st,minimum size=8mm] (r) at (0,3.5) {$\bot$};
-  \node[st,minimum size=8mm] (a1) at (1,0.5) {$1$};
-  \node[st,minimum size=8mm] (a2) at (1,2.5) {$2$};
-  \node[st,minimum size=8mm] (a3) at (1,4.5) {$3$};
-  \node[st,minimum size=8mm] (a4) at (1,6.5) {$4$};
-  \node[st,minimum size=9mm] (b12) at (2,-0.5) {$1{,}2$};
-  \node[st,minimum size=9mm] (b13) at (2,1.0) {$1{,}3$};
-  \node[st,minimum size=9mm] (b14) at (2,2.0) {$1{,}4$};
-  \node[st,minimum size=9mm] (b23) at (2,3.2) {$2{,}3$};
-  \node[st,minimum size=9mm] (b24) at (2,4.2) {$2{,}4$};
-  \node[st,minimum size=9mm] (b34) at (2,5.2) {$3{,}4$};
-  \node[st,minimum size=10mm] (c123) at (3,0.0) {$1{,}2{,}3$};
-  \node[st,minimum size=10mm] (c124) at (3,1.2) {$1{,}2{,}4$};
-  \node[st,minimum size=10mm] (c134) at (3,2.4) {$1{,}3{,}4$};
-  \node[st,minimum size=10mm] (c234) at (3,3.6) {$2{,}3{,}4$};
-  \node[st,minimum size=11mm] (d) at (4,1.8) {$1{,}2{,}3{,}4$};
-  \foreach \t in {a1,a2,a3,a4} \draw[ed] (r) -- (\t);
-  \draw[ed] (a1) -- (b12); \draw[ed] (a1) -- (b13); \draw[ed] (a1) -- (b14);
-  \draw[ed] (a2) -- (b23); \draw[ed] (a2) -- (b24);
-  \draw[ed] (a3) -- (b34);
-  \draw[ed] (b12) -- (c123); \draw[ed] (b12) -- (c124);
-  \draw[ed] (b13) -- (c134); \draw[ed] (b23) -- (c234);
-  \draw[ed] (c123) -- (d);
-\end{tikzpicture}
-\caption{The bid-chain lattice for one color at $T=4$: chains are
-non-empty subsets of $\{1,2,3,4\}$, so there are $2^4-1=15$ per color and
-$2\cdot 15+1=31$ bidding states in total. Every node also has a
-\emph{challenge} edge into procurement, omitted here.}
-\label{fig:h2ladder}
-\end{figure}
-
-\subsection{The first real discard}
-
-At $H=2$ the loser of round~1 holds two cards and must choose which to
-drop. This is the game's first genuinely private decision with a future:
-the choice is unobserved, it determines the loser's hand for round~2, and
---- by discard anonymity --- the opponent will never learn it directly. It
-is also where the public bounds first decay (Lemma~\ref{lem:fold}).
-
-\subsection{Class counts}
-
-$K(2)=9$ per-seat statistics give $2\cdot 81+1=163$ classes, spread over
-layers $T=4$ (the root), $T=3$, $T=2$ and $T=1$. Forward search realizes
-$149$ of them across $345$ concrete boundary states; the breakdown is in
-Table~\ref{tab:reach}.
+The round-1 discard is the game's first genuinely private decision with a
+future: the choice is unobserved, it determines the loser's hand for
+round~2, and by discard anonymity the opponent never learns it directly.
+It is also where the public bounds first decay (Lemma~\ref{lem:fold}).
 
 % =========================================================================
-\section{The Full Game}\label{sec:full}
+\section{The Full Game and Reachability}\label{sec:full}
+
+\subsection{Deals and classes}
 
 The real game deals $H=5$. There are
 \[
@@ -1094,13 +1030,13 @@ $5$ & 0.00109 & 0.00518 & 0.00901 & 0.00713 & 0.00257 & 0.00034\\
 
 By Corollary~\ref{cor:classcount} there are $6{,}051$ public classes.
 Table~\ref{tab:layers} breaks them down by layer, separating the $330$
-terminal classes --- where the pending loser holds one card, so the value
-is decided without further play --- from the $5{,}721$ that contain a real
+terminal classes, where the pending loser holds one card and the value is
+decided without further play, from the $5{,}721$ that contain a real
 subgame.
 
 \begin{table}[t]
 \centering
-\caption{Public classes at $H=5$ by layer $T'$ --- the cards in play
+\caption{Public classes at $H=5$ by layer $T'$, the cards in play
 \emph{during} the round that follows, i.e.\ after the pending discard
 (Definition~\ref{def:layer}).}
 \label{tab:layers}
@@ -1124,14 +1060,10 @@ Total & $5{,}721$ & $330$ & $6{,}051$\\
 \end{tabular}
 \end{table}
 
-% =========================================================================
-\section{Reachability}\label{sec:reach}
+\subsection{The reachability obstruction}\label{sec:reach}
 
 Corollary~\ref{cor:classcount} counts the classes the \emph{definition}
-admits. Not all of them can occur. This section characterises the
-obstruction, proves it, and reports the exact reachable set.
-
-\subsection{The obstruction}
+admits. Not all of them can occur.
 
 \begin{lemma}[Every round reveals something]\label{lem:atleastone}
 At least one card is flipped in every contest, so at every non-root
@@ -1140,9 +1072,9 @@ boundary at least one of the four bounds is positive.
 
 \begin{proof}
 The claim's count is at least $1$. The bidder must keep flipping until
-either the count is reached --- which requires at least one on-color card
-to be revealed --- or an off-color card appears, which is itself a flip.
-Either way at least one card is revealed, and by Lemma~\ref{lem:fold} the
+either the count is reached, which requires at least one on-color card to
+be revealed, or an off-color card appears, which is itself a flip. Either
+way at least one card is revealed, and by Lemma~\ref{lem:fold} the
 corresponding bound is raised to at least $1$.
 \end{proof}
 
@@ -1162,8 +1094,8 @@ revealed card to be of color $c$.
 \end{proof}
 
 \begin{corollary}[One round of history]\label{cor:onernd}
-At a boundary reached after exactly one round --- layer $T'=2H-1$, which is
-$T'=9$ in the full game --- the bounds satisfy, for some common color $c$:
+At a boundary reached after exactly one round (layer $T'=2H-1$, which is
+$T'=9$ in the full game) the bounds satisfy, for some common color $c$:
 \begin{enumerate}\itemsep1pt
   \item $\min(\rlb^{\,i},\blb^{\,i})\le 1$ for each seat;
   \item both seats' bounds are expressed against the \emph{same} color
@@ -1201,15 +1133,15 @@ $\seat{1}=(5,0,0)$: seat $0$ owes the discard \emph{and} is known to hold a
 red. Reasoning under a red bid, one concludes that no off-color card was
 shown, so the bid was made, so exactly one red was produced, so the final
 count was $1$; by Remark~\ref{rem:ladder} the bidder was then the starter,
-seat $0$, and the loser must therefore be seat $1$ --- contradiction, so
-the class looks unreachable. It is not. Under a \emph{black} bid, seat $0$
-opens, immediately flips its own top card, and it is red: the contest ends
-at once, seat $0$ is the loser, and the revealed red is exactly the
-certainty bound. The class is reachable. This is why we compute the closure
-by machine rather than argue it by hand.
+seat $0$, and the loser must therefore be seat $1$. That contradiction
+makes the class look unreachable, and it is not. Under a \emph{black} bid,
+seat $0$ opens, immediately flips its own top card, and it is red: the
+contest ends at once, seat $0$ is the loser, and the revealed red is
+exactly the certainty bound. This is why we compute the closure by machine
+rather than argue it by hand.
 \end{remark}
 
-Note that the obstruction weakens with depth. After two or more rounds, the
+The obstruction weakens with depth. After two or more rounds, the
 maximum-fold of Lemma~\ref{lem:fold} can combine sightings under
 \emph{different} bid colors: a red bid in round~1 revealing $(2,1)$
 followed by a black bid in round~2 revealing $(1,2)$ folds to $(2,2)$,
@@ -1218,16 +1150,12 @@ constraint bites hardest at the top of the game and all but vanishes below.
 
 \subsection{Exact closure}\label{sec:closure}
 
-To decide which classes occur we search the game forward from the deal. But
-we cannot search over classes alone, and it is worth being precise about
-why.
-
-A class records only what is \emph{certain}: that seat $i$ holds at least
-$\rlb^{\,i}$ reds. That is not enough to determine which classes can come
-next, because what a seat can \emph{reveal} in the coming round depends on
-what it actually holds. A seat whose class says ``at least one red'' might
-hold one red or five; only in the latter case can five reds be flipped off
-its deck next round, driving $\rlb$ to $5$. So the search must carry the
+To decide which classes occur we search the game forward from the deal. The
+search cannot run over classes alone. A class records only what is certain,
+and what a seat can \emph{reveal} in the coming round depends on what it
+actually holds: a seat whose class says ``at least one red'' might hold one
+red or five, and only in the latter case can five reds be flipped off its
+deck next round, driving $\rlb$ to $5$. The search must therefore carry the
 true hand composition alongside the public bounds.
 
 \begin{definition}[Concrete boundary state]\label{def:concrete}
@@ -1242,8 +1170,8 @@ satisfies $\rlb^{\,i}\le r_i$ and $\blb^{\,i}\le b_i$: you cannot be certain
 of more than is there.
 \end{definition}
 
-Each concrete state determines exactly one class --- forget $r_i$ and $b_i$,
-keep $n_i=r_i+b_i$ and the bounds --- so the map
+Each concrete state determines exactly one class (forget $r_i$ and $b_i$,
+keep $n_i=r_i+b_i$ and the bounds), so the map
 \[
   \{\text{concrete boundary states}\}\;\longrightarrow\;\{\text{classes}\}
 \]
@@ -1252,17 +1180,9 @@ at least one concrete state above it is. This is why the two counts in
 Table~\ref{tab:reach} differ so much: $27{,}990$ concrete states at $H=5$
 collapse onto $5{,}485$ classes, roughly five hands per public description.
 
-\begin{example}
-The class $\ell=0$, $s_0=(4,1,0)$, $s_1=(5,0,0)$ says seat $0$ owes a
-discard from four cards and certainly holds a red. Sitting above it are the
-concrete states with $(r_0,b_0)\in\{(1,3),(2,2),(3,1),(4,0)\}$ --- four
-different hands, one public description. Distinguishing them is exactly what
-an opponent cannot do.
-\end{example}
-
 The search is then a breadth-first closure: start from every color-deal
 $(r_0,r_1)$, and from each concrete state generate every state reachable by
-one legal round --- every discard the loser could make, every bid color,
+one legal round, over every discard the loser could make, every bid color,
 every legal final count, either seat as bidder, and every way the contest
 could resolve, subject to Lemmas~\ref{lem:atleastone}
 and~\ref{lem:sighting}. It terminates because $T$ strictly decreases
@@ -1271,7 +1191,7 @@ and~\ref{lem:sighting}. It terminates because $T$ strictly decreases
 One thing is deliberately \emph{not} carried: how many of a seat's own
 discards were red. By Remark~\ref{rem:absent} that changes no legal move and
 no public bound, so it cannot affect which classes occur. It does affect
-what players believe, which is the subject of the next section.
+what players believe, which is the subject of Section~\ref{sec:forgets}.
 
 \begin{table}[t]
 \centering
@@ -1334,20 +1254,17 @@ Total & $5{,}485$ & $6{,}051$ & $9.4\%$\\
 \end{axis}
 \end{tikzpicture}
 \caption{Enumerable versus reachable public classes by layer. The two
-series are nearly identical everywhere except $T'=9$ --- the layer reached
+series are nearly identical everywhere except $T'=9$, the layer reached
 after exactly one round, where Corollary~\ref{cor:onernd} eliminates
 $58.7\%$ of the classes the definition admits.}
 \label{fig:reachplot}
 \end{figure}
 
-\subsection{Reading the result}
-
-Two things stand out. First, the reachable set is $90.6\%$ of the
-enumerable one, so the definition of a public class is tight: the
-statistics in Definition~\ref{def:class} are very nearly a complete
-invariant. Second, essentially all of the slack sits in a single layer.
-$T'=9$ is the only layer with exactly one round of history, and
-Corollary~\ref{cor:onernd} is strongest there; by $T'=8$ two rounds of
+The result reads in two lines. The reachable set is $90.6\%$ of the
+enumerable one, so the statistics of Definition~\ref{def:class} are very
+nearly a complete invariant. And essentially all of the slack sits in a
+single layer: $T'=9$ is the only layer with exactly one round of history,
+where Corollary~\ref{cor:onernd} is strongest, and by $T'=8$ two rounds of
 max-folding have already restored almost everything.
 
 \begin{figure}[t]
@@ -1376,17 +1293,15 @@ reachable class counts of Table~\ref{tab:reach}.}
 \end{figure}
 
 % =========================================================================
-\section{The Size of the Real Game}\label{sec:realsize}
+\section{The True Game: Histories and Information Sets}\label{sec:realsize}
 
-Everything counted so far is a \emph{state}: a description of where the
-machine is. But Red/Black is a game of hidden information, and the players
-do not act on states --- they act on what they have \emph{seen}. A bid
-changes no card and moves no counter, yet it is observed, remembered, and
-(as Section~\ref{sec:forgets} makes precise) it changes what a rational
-opponent believes. The decision points of the real game $G$ are therefore
-\emph{histories}, not states, and this section counts them exactly. The
-numbers justify, quantitatively, why every solution method in the companion
-papers works with beliefs rather than with the history tree itself.
+Everything counted so far is a state of the dynamics or a projection of
+one. The decision points of the real game $G$ are neither. Players act on
+what they have seen, and nothing in the rules erases the record from their
+minds: a bid changes no card and moves no counter, yet it is observed,
+remembered, and (Section~\ref{sec:forgets}) it changes what a rational
+opponent believes. The state notion of $G$ is therefore the history, rung
+(ii) of Section~\ref{sec:ladder}, and this section counts it exactly.
 
 \subsection{Public histories}
 
@@ -1395,22 +1310,21 @@ The \emph{public history} at a point of play is the full sequence of
 publicly observable events since the deal: for each round, a reorder marker,
 the bid chain as bid (color and count) and challenge events in order, each
 flip as a (deck, color) pair \emph{in order}, and a discard event naming the
-discarding seat but --- by rule --- not the discarded color.
+discarding seat but, by rule, not the discarded color.
 \end{definition}
 
-Two features distinguish this object from the states of
-Section~\ref{sec:automaton}. First, bids enter it: the physical state
-forgets a retracted bid chain the moment the round resolves, but the
-history keeps every bid ever made. Second, flip \emph{order} enters it:
-Lemma~\ref{lem:order} proved order irrelevant to the state, but the
-sequence of deck choices is observed, and in $G$ an observation is part of
-the decision point whether or not it moves a counter. Order irrelevance
-collapses the machine; it does not collapse the information.
+Two features distinguish this object from the dynamics state. First, bids
+enter it: the dynamics state forgets a bid chain the moment the round
+resolves, but the history keeps every bid ever made. Second, flip
+\emph{order} enters it: Lemma~\ref{lem:order} proved order irrelevant to
+the state, but the sequence of deck choices is observed, and in $G$ an
+observation is part of the decision point whether or not it moves a
+counter. Order irrelevance collapses the machine but not the information.
 
 The history tree composes round records over the layered DAG of
 Figure~\ref{fig:layerdag}, with the loser-dependent starter rule coupling
 consecutive rounds. Counting it is a finite recurrence over post-discard
-hand sizes $(n_0,n_1)$ and the starter --- terminal histories, decision
+hand sizes $(n_0,n_1)$ and the starter; terminal histories, decision
 histories (nodes at which some seat acts: a reorder, a bid-or-challenge
 point, a flip-target point, a discard), and boundary histories are each
 counted by the same traversal. The recurrence and its closed subterms
@@ -1443,8 +1357,8 @@ Public classes ($2K^2{+}1$) & $19$ & $163$ & $723$ & $2{,}313$ & $6{,}051$\\
 \end{table}
 
 At the full hand size the exact values deserve to be written out once,
-because ``$10^{34}$'' undersells the point that they are \emph{counted},
-not estimated:
+because ``$10^{34}$'' undersells the fact that they are counted, not
+estimated:
 \begin{align*}
 \text{public decision histories of } G:\quad
   &53{,}366{,}481{,}858{,}618{,}743{,}315{,}771{,}794{,}534{,}337{,}111\\
@@ -1452,11 +1366,11 @@ not estimated:
   &2{,}448{,}351{,}139{,}319{,}171{,}077{,}272{,}326{,}424{,}233{,}304
 \end{align*}
 
-The opening round alone makes the state-versus-history gap vivid: the round
-automaton of Section~\ref{sec:round} has $119{,}036$ lattice-collapsed
-resolutions, but $1{,}888{,}256$ order-sensitive contest records ---
-a factor of $15.9$ from flip order and deck choice alone, before bid chains
-and cross-round composition multiply it to $10^{34}$.
+The opening round alone shows the state-versus-history gap. The round
+graph of Section~\ref{sec:round} has $119{,}036$ lattice-collapsed
+resolutions, but $1{,}888{,}256$ order-sensitive contest records: a factor
+of $15.9$ from flip order and deck choice alone, before bid chains and
+cross-round composition multiply it to $10^{34}$.
 
 \subsection{Infosets, exactly}
 
@@ -1473,8 +1387,8 @@ Counting pairs is harder than counting histories, because a pair must be
 \emph{realizable}: consistent with $i$'s own reveals, and achievable by at
 least one opponent trajectory. The first constraint is a binomial
 prefix-consistency count (an ordering whose revealed prefix is fixed leaves
-$\binom{n-f}{\,r-p_r}$ free completions). The second is where this paper's
-main theorem earns its keep a second time:
+$\binom{n-f}{\,r-p_r}$ free completions). The second reduces to the support
+theorem of the next section.
 
 \begin{theorem}[Exact infoset counts]\label{thm:infosets}
 For heads-up Red/Black at hand size $H$, the number of perfect-recall
@@ -1492,12 +1406,12 @@ discard branching; opponent-side realizability of a candidate reveal
 $(p_r,p_b)$ reduces, by Theorem~\ref{thm:support} (support completeness),
 to non-emptiness of the folded bound interval:
 $\max(\rlb,p_r)+\max(\blb,p_b)\le n_{\mathrm{opp}}$. Because the bounds
-are \emph{exactly} the feasible set --- tight as well as sound --- this
-test admits every realizable pair and no unrealizable one, so the
-recurrence counts infosets exactly rather than bounding them. The
-recurrence is validated against explicit joint enumeration of the full
-game (both hands, both orderings, every deck choice) at $H=1$ ($42$ and
-$40$, exact) and $H=2$ ($945{,}053$ and $945{,}049$, exact).
+are \emph{exactly} the feasible set, tight as well as sound, this test
+admits every realizable pair and no unrealizable one, so the recurrence
+counts infosets exactly rather than bounding them. The recurrence is
+validated against explicit joint enumeration of the full game (both hands,
+both orderings, every deck choice) at $H=1$ ($42$ and $40$, exact) and
+$H=2$ ($945{,}053$ and $945{,}049$, exact).
 \end{proof}
 
 \begin{remark}[The starter's edge, in counts]
@@ -1540,34 +1454,34 @@ combinatorial shadow this small.
 abstraction. The history tree and the infoset space of $G$ grow
 super-exponentially in hand size; the public class space grows like the
 polynomial $2\bigl(\tbinom{H+3}{3}-1\bigr)^2+1$. Everything the class
-does not carry must be reconstructed as \emph{belief} --- the subject of
-Section~\ref{sec:forgets}.}
+does not carry must be reconstructed as belief
+(Section~\ref{sec:forgets}).}
 \label{fig:growth}
 \end{figure}
 
 \subsection{What the numbers license}
 
 Three ratios summarize the section. The class abstraction compresses
-boundary histories by $\sim\!10^{31}$ ($3.1\times10^{34}$ boundary
+boundary histories by about $10^{31}$ ($3.1\times10^{34}$ boundary
 histories to $5{,}485$ reachable classes, through the intermediate
 $27{,}990$ concrete boundary states of Table~\ref{tab:master}). The
-infoset space of $G$ exceeds the class space by $\sim\!10^{29}$. And the
+infoset space of $G$ exceeds the class space by about $10^{29}$. And the
 infoset space exceeds anything enumerable by any machine by more than ten
-orders of magnitude. So there will be no solve of $G$ by tabulation, at
-this hand size or anywhere near it: any method that engages $G$ itself
-must represent histories through a summary that is small \emph{and}
-strategically sufficient. The class is the right summary of public
-\textbf{knowledge} (Theorem~\ref{thm:support}); what remains --- and what
-Section~\ref{sec:forgets} takes up --- is whether anything tractable is a
-sufficient summary of public \textbf{belief}.
+orders of magnitude. There will be no solve of $G$ by tabulation, at this
+hand size or anywhere near it: any method that engages $G$ itself must
+represent histories through a summary that is small and strategically
+sufficient. Theorem~\ref{thm:support} will make the class the right
+summary of public \emph{knowledge}; whether anything tractable
+sufficiently summarizes public \emph{belief} is the subject of
+Section~\ref{sec:forgets}.
 
 % =========================================================================
-\section{What the Public Class Forgets}\label{sec:forgets}
+\section{What the Class Forgets, and the Belief Family}\label{sec:forgets}
 
 The public class of Definition~\ref{def:class} is a summary, and summaries
-discard things. This section says exactly what it discards, because the
-omissions are not incidental --- they are the reason Paper~II's
-decomposition needs care, and the raw material of Paper~III.
+discard things. This section says exactly what it discards. The omissions
+are the reason Paper~II's decomposition needs care, and the raw material
+of Paper~III.
 
 \subsection{Knowledge versus belief}
 
@@ -1589,15 +1503,22 @@ exhaustively: across all $5{,}485$ reachable classes at $H=5$, the hand
 compositions actually realized by the closure of Section~\ref{sec:closure}
 fill the box exactly, with no class showing a gap.
 
-So the class is a \emph{complete} record of what is publicly \textbf{known}.
-It is not a record of what is publicly \textbf{believed}. Knowing the
-support of a distribution is not knowing the distribution, and the gap
-between the two is large enough to matter.
+So the class is a complete record of what is publicly \emph{known}, and no
+finer strategy-free record exists. The exact public posterior depends on
+the players' strategies (if a player always discards a black when holding
+one, watching a discard is enormously informative; against an unknown
+policy the same observation says almost nothing), so it is a function of
+the history \emph{and} an opponent model, and cannot be tabulated as part
+of a description of the game. The certainty bounds are precisely the facts
+entailed by the rules and the public record regardless of how anyone
+plays, and Theorem~\ref{thm:support} says they are \emph{all} of those
+facts. What the class does not record is what is publicly \emph{believed};
+the rest of this section shows that gap is large.
 
 \subsection{Two paths to the same class}
 
 Consider a seat that ends up holding four cards, certainly including at
-least one red --- public statistic $(4,1,0)$. Two histories reach it:
+least one red, public statistic $(4,1,0)$. Two histories reach it:
 
 \begin{description}\itemsep3pt
   \item[Path A (decay).] The seat held five cards; \emph{two reds were
@@ -1612,14 +1533,14 @@ least one red --- public statistic $(4,1,0)$. Two histories reach it:
 Identical classes. But an observer who watched Path A saw two reds go into
 that hand and only one card leave it, so it very likely still holds two.
 An observer of Path B saw one red and nothing else. Table~\ref{tab:paths}
-quantifies the gap under a neutral reference policy --- uniformly random
-ordering and uniformly random discard --- chosen only to put numbers on it.
+quantifies the gap under a neutral reference policy (uniformly random
+ordering and uniformly random discard), chosen only to put numbers on it.
 
 \begin{table}[htbp]
 \centering
 \caption{Posterior over the reds a seat holds, given the \emph{same} public
 statistic $(n,\rlb,\blb)=(4,1,0)$. Both paths certify ``at least one red''
-and neither certifies more --- the bound is tight for each --- yet the
+and neither certifies more, the bound being tight for each, yet the
 distributions differ substantially.}
 \label{tab:paths}
 \begin{tabular}{@{}lrr@{}}
@@ -1637,12 +1558,11 @@ $\Pr[\text{at least }2\text{ reds}]$ & $0.947$ & $0.875$\\
 \end{tabular}
 \end{table}
 
-The mechanism is the max-fold of Lemma~\ref{lem:fold}. Folding is
-\emph{lossy in a specific direction}: it remembers the height of the bound
-but forgets whether that height is fresh evidence or the residue of a taller
-bound worn down by discards. A bound of $1$ that used to be $3$ is a much
-stronger signal than a bound of $1$ that has always been $1$, and the class
-cannot tell them apart.
+The mechanism is the max-fold of Lemma~\ref{lem:fold}. Folding remembers
+the height of the bound but forgets whether that height is fresh evidence
+or the residue of a taller bound worn down by discards. A bound of $1$
+that used to be $3$ is a much stronger signal than a bound of $1$ that has
+always been $1$, and the class cannot tell them apart.
 
 \subsection{The bid history}
 
@@ -1650,7 +1570,7 @@ The second omission is blunter: a round's bid history is cleared when the
 round ends (Section~\ref{sec:info}) and appears nowhere in the class. Yet
 bids are chosen by players who can see their own cards, so a bid history is
 evidence about the bidder's hand, and a \emph{sequence} of bid histories is
-evidence about how that player bids --- how readily they bluff, how they
+evidence about how that player bids: how readily they bluff, how they
 price a raise.
 
 Neither kind of evidence survives into the public class. Note the
@@ -1661,16 +1581,16 @@ and the class forgets it completely.
 
 \subsection{The reachable belief family}\label{sec:belieffamily}
 
-The two omissions above say what beliefs the class \emph{loses}. This
-subsection proves the surprising positive counterpart: the beliefs
-themselves --- over both seats' private situations jointly, under
-\emph{any} strategy profile --- live in a family whose shape is a
-property of the game, not of the profile.
+The omissions above say what beliefs the class loses. The positive
+counterpart is that the lost content has a small, game-determined shape:
+under \emph{any} strategy profile, the posterior over both seats' private
+situations jointly lives in a family whose form is a property of the game,
+not of the profile.
 
 Write seat $i$'s private \emph{type} at a boundary as $t_i=(r_i,x_i)$:
 the reds currently held and the reds among $i$'s own discards. (This is
-the private statistic the companion papers solve over; the pending
-material here is only its structure.)
+the private statistic the companion papers solve over; what matters here
+is only its structure.)
 
 \begin{lemma}[Deal invariance]\label{lem:ainv}
 Let $a_i = r_i + x_i$. Then $a_i$ is constant along every play: it equals
@@ -1692,10 +1612,11 @@ on seat $i$'s strategy and $h$.
 
 \begin{proof}
 All correlation between the seats' private situations originates in the
-deal, and by Lemma~\ref{lem:ainv} the deal enters the type pair only
+deal. By Lemma~\ref{lem:ainv} the deal enters the type pair only
 through $(a_0,a_1)$, which is a deterministic function of the types
-themselves --- so the deal coupling is absorbed into $\lambda_\kappa$ and
-rides along every transition unchanged. Conditional on types, each seat's
+themselves; the deal coupling is therefore absorbed into
+$\lambda_\kappa$ and rides along every transition unchanged.
+Conditional on types, each seat's
 observable actions depend only on its own type and $h$, so the likelihood
 of $h$ is a product of per-seat terms. Bayes' rule then yields the
 displayed form.
@@ -1712,20 +1633,34 @@ correct own-side conditionals.
 Theorem~\ref{thm:rankone} was found empirically before it was proved: over
 $17{,}140$ boundaries of $3{,}000$ self-play games under the solved
 profile of the companion papers, the measured rank-one residual of the
-exact posterior is $3.3\times10^{-16}$ --- floating-point zero --- with no
+exact posterior is $3.3\times10^{-16}$, floating-point zero, with no
 exceptions. The theorem is load-bearing there twice over: it makes exact
 belief tracking cheap (two per-seat vectors instead of a joint matrix),
 and Corollary~\ref{cor:modelfree} is what lets a re-solving agent keep
 exact own-side conditionals even against an unmodeled opponent (Paper
 III's filter-repair construction).
 
-Together with Section~\ref{sec:realsize}, this locates the game's true
-sufficient statistic. The public class is the strategy-independent
+Together with Section~\ref{sec:realsize}, this completes the ladder of
+Section~\ref{sec:ladder}. The public class is the strategy-independent
 \emph{knowledge}; the reachable \emph{belief} state is the class plus two
-per-seat tilt vectors $(g_0,g_1)$ --- a finite-dimensional family, against
-the $10^{34}$ raw histories that induce it. Strategy dependence enters
-only through where in the family a profile lands, never through the
-family's shape.
+per-seat tilt vectors $(g_0,g_1)$, a finite-dimensional family against the
+$10^{34}$ raw histories that induce it. Strategy dependence enters only
+through where in the family a profile lands, never through the family's
+shape.
+
+\begin{remark}[The deal coupling in numbers]\label{rem:deckvalue}
+Because the deck is finite and balanced, a seat's own cards are evidence
+about the opponent's: seeing $k$ reds among your own five shifts the
+chance that an unseen card is red from $1/2$ to $(26-k)/47$, a swing from
+$0.447$ to $0.553$. In the one-card endgame (both seats down to one card,
+layer $T'=2$) this coupling is the entire strategic content: the opener's
+only real decision is whether to bet that the two remaining cards match or
+differ, using its own five dealt cards to choose. That endgame's exact
+value is $\tfrac{40651}{78302}\approx 0.5192$ to the opener, above $1/2$
+purely because of sampling without replacement, and above the
+$26/51\approx0.5098$ that an opener ignoring its own cards would get.
+Under an idealised infinite deck the same game is exactly even.
+\end{remark}
 
 \subsection{Measured: how much the class forgets}\label{sec:forgetsmeasured}
 
@@ -1739,53 +1674,44 @@ the prior with the best possible \emph{class-keyed} statistic closes only
 about $17$ points of that gap, and small public-statistic enrichments
 (e.g.\ freshness bits distinguishing Path~A from Path~B above) add only
 $2$--$3$ more: most of the belief lives in within-class variation that no
-small public statistic reaches. These are profile-dependent numbers ---
-one representative profile, the solved one --- but they put a scale on
-the qualitative claim of this section: the class prior at depth is nearly
-orthogonal to the belief a competent observer actually holds. The
-companion papers carry the consequences.
+small public statistic reaches. These are profile-dependent numbers,
+measured under one representative profile, the solved one, but they put a
+scale on the qualitative claim of this section: the class prior at depth
+is nearly orthogonal to the belief a competent observer actually holds.
 
-\subsection{Why the class stops where it does}
+\subsection{The abstraction $G'$}
 
-It would be natural to ask for a finer public state, and worth seeing why
-one is not simply available.
+The companion papers divide along the ladder's last rung, and the split
+object deserves a formal statement.
 
-The exact public posterior over hands depends on the players'
-\emph{strategies}. If I know you always discard a black when you hold one,
-watching you discard is enormously informative; if I know nothing about your
-policy, the same observation tells me almost nothing. So the exact posterior
-is not a function of the public history alone --- it is a function of the
-history \emph{and} a model of the opponent. It cannot be tabulated as part
-of a description of the game, because it is not a property of the game.
+\begin{definition}[The abstraction $G'$]\label{def:gprime}
+$G'$ is the game identical to $G$ within each round, except that at every
+round boundary of class $\kappa$ the joint law over type pairs is reset to
+the class prior $\lambda_\kappa$ of Theorem~\ref{thm:rankone};
+equivalently, the tilts $g_0$ and $g_1$ are replaced by $1$. Its decision
+points are pairs (public class, own type) rather than histories, so its
+state notion is rung (iii) of Section~\ref{sec:ladder}.
+\end{definition}
 
-The certainty bounds are what remains once that dependence is stripped out.
-They are precisely the facts entailed by the rules and the public record
-regardless of how anyone has been playing, which is why they, and not some
-richer statistic, are the right stopping point for a paper about the game
-itself. Theorem~\ref{thm:support} is the formal version of that claim: the
-class is exactly the strategy-independent content of the public history.
+Paper~II solves $G'$ exactly, decomposing at boundaries over the $5{,}721$
+subgame-bearing classes, and then measures what the reset costs in play:
+the abstraction's equilibrium is exploitable in $G$ in ways its own
+convergence meters cannot see. Paper~III keeps the tilts, tracking
+$(g_0,g_1)$ with an exact public filter, re-solving each boundary under
+the true posterior rather than the prior, and pursuing a certified upper
+bound on real-game exploitability, with Corollary~\ref{cor:modelfree}
+supplying own-side conditionals that survive an arbitrarily wrong opponent
+model. The distance between the two programs is the measured gap of
+Section~\ref{sec:forgetsmeasured}.
 
-Everything beyond it --- the fold's path dependence, the bid history, the
-opponent's discard tendencies --- is belief rather than knowledge. What
-this paper can still say about belief without committing to a strategy
-model is Section~\ref{sec:belieffamily}: the reachable belief family has
-a game-determined shape, $\lambda_\kappa\cdot g_0\cdot g_1$, and only the
-tilts $(g_0,g_1)$ are anyone's model of anyone. The class is the complete
-knowledge state; the class plus the tilts is the belief state; and the
-companion papers are, respectively, what happens when a solver uses only
-the first (Paper~II) and what it takes to responsibly use the second
-(Paper~III).
-
+% =========================================================================
 \section{Summary of Counts}\label{sec:summary}
 
-Table~\ref{tab:master} gathers every quantity derived above across the
-three games. Reading it left to right shows how sharply the game grows with
-hand size: the deal count climbs by nine orders of magnitude, and the
-opening round's contest structure by four, while the \emph{public} state
-space --- the thing an observer must actually track --- grows only from
-$19$ to $6{,}051$. That gap is the point of Section~\ref{sec:public}: the
-public projection is exponentially smaller than the machine it summarizes,
-and it is what the companion paper's algorithms index on.
+Table~\ref{tab:master} gathers the counts across the three games. The deal
+count climbs nine orders of magnitude and the opening round's contest
+structure four, while the public class space grows only from $19$ to
+$6{,}051$; the histories and infosets of the true game
+(Table~\ref{tab:realsize}) grow past $10^{33}$.
 
 \begin{table}[!ht]
 \centering
@@ -1814,73 +1740,11 @@ Perfect-recall infosets of $G$ (both seats) & $82$ & $1{,}890{,}102$ & $2.448\ti
 \end{tabular}
 \end{table}
 
-\section{What Comes Next}\label{sec:next}
-
-This paper stops at the dynamics and the information structure. Two
-companion papers carry the threads forward, and it is worth being precise
-about which thread each one takes.
-
-\paragraph{Paper II solves the class abstraction, exactly, and measures
-the cost.} Section~\ref{sec:realsize} rules out engaging the history tree
-directly, and Theorem~\ref{thm:support} makes the class the canonical
-small summary --- so Paper~II decomposes the game at boundaries, re-derives
-entry beliefs from the class prior $\lambda_\kappa$, and solves every one
-of the $5{,}721$ subgame-bearing classes with CFR+. That belief re-derivation
-is exactly the approximation Sections~\ref{sec:belieffamily}
-and~\ref{sec:forgetsmeasured} put a scale on, and Paper~II's second half
-measures what it costs in play: the abstraction's equilibrium is
-exploitable in the real game in ways its own convergence meters cannot
-see, including a converged action provably dominated in $G$.
-
-\paragraph{Paper III uses the belief family this paper identified.}
-Theorem~\ref{thm:rankone} says the reachable beliefs of $G$ form the
-finite family $\lambda_\kappa\cdot g_0\cdot g_1$; Paper~III tracks the
-tilts exactly with a public filter, re-solves each boundary under the
-true posterior instead of the prior, and pursues a \emph{certified upper
-bound} on real-game exploitability via safe re-solving.
-Corollary~\ref{cor:modelfree} is load-bearing there: own-side
-conditionals survive an arbitrarily wrong opponent model.
-
-Three technical threads from this paper recur in both.
-
-\paragraph{From public classes to information sets.} A player at a boundary
-knows their public class \emph{and} their own hand. The private component
-turns out to need two numbers, not one: the reds currently held, and the
-reds among the cards that player has itself discarded. The second is
-private information about the \emph{deck}, not about the hand --- which
-brings us to the next thread.
-
-\paragraph{The finite deck is load-bearing.} Because the deck is finite and
-balanced, your own cards tell you about your opponent's. Seeing $k$ reds
-among your own five shifts the chance an unseen card is red from $1/2$ to
-$(26-k)/47$, a swing from $0.447$ to $0.553$. In the one-card game this is
-the \emph{entire} strategic content: the opener's only real decision is
-whether to bet that the two cards match or differ, and it should use its
-own five dealt cards to choose. That game's exact value is
-$\tfrac{40651}{78302}\approx 0.5192$ to the opener --- above $1/2$ purely
-because of sampling without replacement, and above the $26/51\approx0.5098$
-that an opener ignoring its own cards would get. Under an idealised
-infinite deck the same game is exactly even.
-
-\paragraph{Composition is the hard part.} The layered DAG of
-Section~\ref{sec:reach} invites solving the game layer by layer,
-bootstrapping each class from the ones below. Two hazards, both visible
-from this paper, make that harder than it looks. First, by
-Section~\ref{sec:forgets} the class is not a sufficient statistic for
-beliefs, so re-deriving a belief from the class at a layer boundary is an
-approximation, not an identity --- it silently merges the two paths of
-Table~\ref{tab:paths}. Second, whether the decomposition is faithful
-depends on where the layers are cut relative to the private discard
-decision. Getting either wrong is not a small error. Both are the subject
-of Paper~II --- the second cost an early solver generation a measured
-mispricing, and the first is the origin of everything Paper~III exists
-to repair.
-
 \appendix
 
 \section{Reproducing the numbers}\label{app:repro}
 
-Two scripts accompany this paper.
+Three scripts accompany this paper.
 
 \begin{description}\itemsep3pt
   \item[\code{state\_counts.py}] re-derives every class-space count from
@@ -1888,12 +1752,12 @@ Two scripts accompany this paper.
         corresponding tables. It includes the forward-closure search of
         Section~\ref{sec:reach}.
   \item[\code{real\_game\_size.py}] computes every count in
-        Section~\ref{sec:realsize} --- histories, decision histories,
-        boundary histories, and the exact per-seat infoset counts --- as
+        Section~\ref{sec:realsize} (histories, decision histories,
+        boundary histories, and the exact per-seat infoset counts) as
         exact big integers, and runs the brute-force joint-enumeration
         validation of Theorem~\ref{thm:infosets} at $H=1,2$. Pure
         standard library.
-  \item[\code{verify\_against\_engine.py}] cross-checks the round-automaton
+  \item[\code{verify\_against\_engine.py}] cross-checks the round-graph
         counts, the class-space counts and the reachable set against the
         shipped implementation, so any disagreement is a genuine bug in one
         of the two rather than a difference of convention.
@@ -1914,7 +1778,7 @@ Two scripts accompany this paper.
   \item[Chain] The strictly increasing sequence of counts bid in a round.
   \item[Class] The public state at a boundary
         (Definition~\ref{def:class}).
-  \item[Layer $T$] Total cards in play after the pending discard; strictly
+  \item[Layer $T'$] Total cards in play after the pending discard; strictly
         decreasing, hence a valid induction index.
   \item[Procurement] The contest phase: the bidder flips cards trying to
         produce the claim.
