@@ -717,6 +717,50 @@ generous; the measurement says actively harmful. Post-solve per-type
 minimization with the capping entry (the enforcement rule of
 Section~\ref{sec:frontier}) is load-bearing machinery.
 
+\begin{remark}[Range-dependent leaf prices, and the fixed point they
+create, 2026-08]\label{rem:fixedpoint}
+Since a fixed promise surface cannot certify, the leaf price must be
+evaluated at the successor's realized entry range. That range is a
+function of the agent's own play and the public record alone, never of
+the opponent's private choices, so it is admissible in a bound. Two
+requirements emerged in building it. The price must see the full public
+resolution, not merely the successor class: the bid chain and the
+location of the fatal flip both move the range while leaving the class
+alone. And the price must be a per-type CONSTANT rather than a per-pair
+matrix, because a parent contracts a leaf price against its own reaches,
+which are not the weights the cap was computed under; a first
+implementation with per-pair caps measured a \emph{negative} excess
+($-5.4\times10^{-3}$), which is to say it did not cap. Per-type
+constants restored it ($+8.2\times10^{-5}$ and $+8.5\times10^{-5}$ in
+the two directions), which is the promise vector $\hat w$ of
+Lemma~\ref{lem:margin} arrived at from the other end.
+
+With that in place the per-resolve residual factors exactly as
+$r = \varepsilon_b + (\text{successor sandwich at its realized range})$,
+verified to $10^{-5}$. At $T'{=}3$ with successors solved at their
+realized ranges the successor sandwich is
+$3.0\times10^{-4}$ to $4.5\times10^{-4}$, against the
+$6.3\times10^{-3}$ per resolve that
+Corollary~\ref{cor:cert} allows. The leaf term clears the gate by a
+factor of fifteen, and the fattening worry that motivated item~2 is not
+what binds.
+
+What binds is a fixed point: the price depends on the successor's range,
+the range on the parent's play, the play on the price. Solving afresh at
+each repricing oscillates ($r$ swinging between $0.32$ and $1.19$).
+Warm-started repricing, damping, and dropping the running average each
+settle three of six measured classes at $1.5$--$2.2\times10^{-4}$ and
+leave the other three unsettled; freezing the successor strategy stops
+the price moving but inflates the successor sandwich to $1.9$, since a
+strategy committed at one range is worthless at another. Two natural
+culprits are ruled out by measurement: independently produced
+equilibria of the same successor at the same range move the per-type
+caps by at most $3.3\times10^{-3}$, and no leaf range is degenerate.
+Depth-limited solvers whose leaf values depend on the ranges the solve
+produces re-evaluate those values at the current iterate on every
+iteration; that variant is untried here and is the next measurement.
+\end{remark}
+
 \paragraph{The sandwich.} Table~\ref{tab:sandwich} reports both jaws.
 
 \begin{table}[h]
@@ -769,12 +813,9 @@ dependency order. The research risk is concentrated in item~2.
 \item \textbf{Certified cap propagation upward.} A $T'{\ge}5$ cap
       against a strategy is one kernel exact-best-response round sweep
       with capped leaves, sound by Theorem~\ref{thm:comp}'s machinery.
-      The open question is whether six layers of propagation stay
-      tight; the measured evidence for hope is that interval
-      propagation \emph{contracts} per layer ($0.66$--$1.03\times$,
-      round mixing diluting leaf error) rather than fattening. This is
-      the program's research risk, and it is testable by measurement
-      in days.
+      The open question was whether six layers of propagation stay
+      tight. Remark~\ref{rem:fixedpoint} reports the measurement: they
+      do, and the obstruction lies elsewhere.
 \item \textbf{Enforcement transcription.} Library entries transcribed
       to playable round strategies, with per-type minimization at
       resolve time. This converts measured margins into a-priori
