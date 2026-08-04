@@ -1,24 +1,33 @@
 # The Red/Black Game - papers
 
-Two papers on **Red/Black**, a hidden-information bidding game played over a
-shared 52-card deck in which only color matters. Paper I formalizes and counts
-the two-player game; Paper II specifies and reports a CFR+ solve of it.
+A three-paper series on **Red/Black**, a hidden-information bidding game
+played over a shared 52-card deck in which only color matters. The spine:
+define the real game exactly (I), solve its class abstraction exactly and
+measure what the abstraction costs (II), then carry beliefs and pursue a
+certified bound on real-game exploitability (III).
 
-`RULES.md` in this repo is the canonical rule text both papers are derived
-from, and `state_counts.py` re-derives every count in Paper I from those rules.
+`RULES.md` in this repo is the canonical rule text all three papers are
+derived from; `state_counts.py` and `real_game_size.py` re-derive every
+count from those rules.
 
 | | |
 | --- | --- |
 | **Paper I** | [Rules, Deterministic Dynamics, and Exact State Enumeration (Heads-Up)](redblack-states.pdf) - [source](redblack-states.tex) |
-| **Paper II** | [Counterfactual Regret Minimization on a Decomposed Heads-Up Game](redblack-cfrplus.pdf) - [source](redblack-cfrplus.tex) |
-| **Note 3** | Safe continual re-solving: the composition certificate - [source](redblack-resolving.tex) |
+| **Paper II** | [Solving the Belief-Reset Abstraction Exactly, and Measuring the Distance to the Real Game](redblack-cfrplus.pdf) - [source](redblack-cfrplus.tex) |
+| **Paper III** | [Belief Carrying, Safe Re-Solving, and the Certificate Problem](redblack-solving-g.pdf) - [source](redblack-solving-g.tex) |
 
-**Status (2026-08-03):** the solver is several generations past what the
-papers report (exact-by-reflection re-solve, measured real-game
-exploitability, belief carrying, a certificate program). The concrete
-revision plan is [`UPDATE_PLAN.md`](UPDATE_PLAN.md); until it lands, read
-Paper II's Results section as the record of the *first* full solve, not
-the current state of play.
+**Status (2026-08-04):** rewritten as a series encapsulating solver
+generations v2-v6. Headlines: the real game has exactly 2.448e33
+perfect-recall infosets (counted, not estimated); the abstraction's value
+is 51.22% to the opener; the solved profile's real-game exploitability is
+certified >= 0.598/game and full belief carrying drives the probe's bound
+to ~0.013; the certificate's upper jaw is still trivial, with the
+distance located in one named quantity (Paper III). `UPDATE_PLAN.md`
+records the audit that drove the rewrite; `AGENT_NOTES.md` is the
+maintenance protocol, including exactly what in Paper III is a
+window-snapshot to update as the certificate program advances. (Note 3,
+the standalone safe-resolving note, was absorbed into Paper III;
+its final text lives in git history.)
 
 ---
 
@@ -42,12 +51,16 @@ Three results organize it:
    entirely in one layer, where 59% of the enumerable classes cannot occur,
    because a round tests one color and stops at the first off-color flip.
 
-The paper then characterizes what that projection throws away. The certainty
-bounds pin the *support* of the public posterior exactly - sound and tight
-across all 5,485 reachable classes - but say nothing about its *shape*: two
-histories arriving at the same public class can leave an observer with
-materially different beliefs. That gap is what Paper II has to be careful
-about.
+The paper then measures the object the projection summarizes - the real
+game's public history tree (5.3e34 decision histories) and its exact
+perfect-recall infoset count (2,448,351,139,319,171,077,272,326,424,233,304
+at H=5, brute-force validated at small hand sizes) - and proves the
+positive counterpart of "knowledge is not belief": under any strategy
+profile, every reachable posterior factorizes over the class prior into
+two per-seat tilts (rank-one factorization, with opponent-model-free
+own-side conditionals). The class is the complete knowledge state; class
+plus tilts is the belief state; those are the two objects Papers II and
+III respectively run on.
 
 ## Paper II - CFR+ on a Decomposed Heads-Up Game
 
@@ -69,11 +82,34 @@ about what the decomposition approximates: by Paper I the public class pins the
 support of the public posterior but not its shape, so re-deriving beliefs at a
 boundary is a modeling choice, not an identity.
 
-It reports the completed solve: all 5,721 classes, a game value of **51.33%**
-to the opening seat, and an evaluation against prior bots. The measurement
-sections come first, deliberately - they are what make those numbers readable.
-In particular the round-local meter reports uniform success while seat-mirror
-antisymmetry, which that meter cannot see, is violated by up to 0.11.
+It reports the abstraction solved twice: a first full solve whose own
+convergence meter read uniformly green while seat-mirror antisymmetry -
+which the meter cannot see - was violated by up to 0.114, and a
+second-generation solve (ordering collapse, mirror reflection, compiled
+kernel) that re-solves the game on a laptop in two hours with mirrors
+exact by construction. The value of the abstraction is **51.22%** to the
+opening seat. The second half measures the distance to the real game:
+reach-weighted TV 0.842 between the class prior and the true posterior,
+certified real-game exploitability >= 0.598/game for a profile whose
+in-abstraction meters read 1e-4, and a theorem exhibiting an action the
+abstraction's equilibrium plays on path with probability 0.97 that is
+dominated in the real game. Dated "incident" boxes preserve the measured
+mistakes (the negative-exploitability trap, the 216,000-game
+head-to-head overturn) as citable lessons.
+
+## Paper III - Belief Carrying, Safe Re-Solving, and the Certificate Problem
+
+The upper-bound program, shipped honestly as a program: re-solving each
+boundary under the exact posterior (tracked over Paper I's belief family)
+closes the probe's certified gap almost entirely (0.598 -> ~0.013, a
+complete dose-response), but naive re-solving admits adversarial
+counterexamples, so the paper builds the certification machinery - a
+safe-resolving gadget with live-measured margins and an
+opponent-model-free composition theorem, every constant re-derived by
+script. Current audited status, stated plainly: the sandwich is
+[0.013, trivial]; fixed promise surfaces are certifiably dead; the whole
+remaining distance is honorability of the price surface at layers
+T' >= 4, with a four-item program aimed at it.
 
 ---
 
@@ -103,6 +139,7 @@ into Overleaf and it compiles as-is. Locally:
 ```bash
 tectonic -X compile redblack-states.tex --outdir .
 tectonic -X compile redblack-cfrplus.tex --outdir .
+tectonic -X compile redblack-solving-g.tex --outdir .
 ```
 
 ## Two clocks - read this before the counts

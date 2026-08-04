@@ -1,5 +1,14 @@
 # Paper update plan (2026-08-03)
 
+> **EXECUTED 2026-08-04** as a full three-paper rewrite (going beyond
+> this plan's revise-in-place scope, per operator direction): Paper I
+> gained the real-game section and the belief-family theorems; Paper II
+> was reframed around G/G' with the metrology and distance results;
+> Note 3 was absorbed into the new Paper III
+> (`redblack-solving-g.tex`). This file remains as the audit record
+> that motivated the rewrite; the live maintenance protocol is
+> `AGENT_NOTES.md`.
+
 The papers stopped at the v2 solve; the solver is now four generations
 past them. This is the audit of what each document must absorb to
 encapsulate the project's progress, ordered so the most-wrong claims are
