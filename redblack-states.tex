@@ -86,10 +86,20 @@ concentrated almost entirely in one layer, where $59\%$ of the enumerable
 classes cannot occur. We then characterize what that projection throws
 away: it pins down the support of the public posterior exactly, but not its
 shape, so two histories arriving at the same public state can leave an
-observer with materially different beliefs. Every count in this paper is
-machine-verified against the shipped rules engine. The paper is a precursor
-to a companion paper on counterfactual regret minimization for the same
-game.
+observer with materially different beliefs. We then measure the object the
+projection summarizes: the real game's public history tree has
+$5.3\times10^{34}$ decision histories and exactly
+$2{,}448{,}351{,}139{,}319{,}171{,}077{,}272{,}326{,}424{,}233{,}304$
+perfect-recall infosets --- thirty orders of magnitude beyond the class
+space --- so no method can engage it by tabulation. Finally we prove that
+the beliefs the class forgets are not formless: under any strategy
+profile, every reachable posterior factorizes over the class prior into
+two per-seat tilts, giving the game a finite-dimensional belief state
+whose shape is strategy-independent. Every count in this paper is
+machine-verified against the shipped rules engine. Two companion papers
+build on it: one solves the class abstraction exactly and measures what
+the projection costs in play; the other uses the belief family to engage
+the real game.
 \end{abstract}
 
 \section{Introduction}
@@ -107,8 +117,9 @@ interesting. This paper does the first half of that job: it describes the
 game exactly, formalizes it as a finite transition system, and counts
 everything. It deliberately says nothing about how to \emph{play} well.
 Strategy, equilibrium and the algorithms that approximate it are the
-subject of a companion paper; here we build the object those algorithms
-will run on.
+subject of two companion papers --- Paper~II solves the class abstraction
+exactly and measures its cost; Paper~III engages the real game --- and
+here we build the object those algorithms run on.
 
 \paragraph{Scope.} We restrict throughout to the \textbf{heads-up} ($N=2$)
 game. The rules in Section~\ref{sec:rules} are stated for two players; where
@@ -139,6 +150,19 @@ a rule generalizes awkwardly we say so. All counting is heads-up.
         (Theorem~\ref{thm:support}) but not its shape, and two histories
         reaching the same class can leave an observer with materially
         different beliefs (Section~\ref{sec:forgets}).
+  \item Exact enumeration of the \emph{real} game: $5.3\times10^{34}$
+        public decision histories and $2.4\times10^{33}$ perfect-recall
+        infosets at $H=5$, counted exactly (not estimated) by a
+        recurrence whose opponent-realizability test is
+        Theorem~\ref{thm:support} itself, validated by explicit joint
+        enumeration at small hand sizes (Section~\ref{sec:realsize}).
+  \item The rank-one factorization of reachable beliefs: under any
+        strategy profile the public posterior at a boundary is the class
+        prior times two per-seat tilts (Theorem~\ref{thm:rankone}), with
+        opponent-model-free own-side conditionals
+        (Corollary~\ref{cor:modelfree}) --- the structural fact the
+        companion papers' belief tracking and safe re-solving stand on
+        (Section~\ref{sec:belieffamily}).
 \end{enumerate}
 
 \paragraph{Reproducibility.}
@@ -1352,12 +1376,198 @@ reachable class counts of Table~\ref{tab:reach}.}
 \end{figure}
 
 % =========================================================================
+\section{The Size of the Real Game}\label{sec:realsize}
+
+Everything counted so far is a \emph{state}: a description of where the
+machine is. But Red/Black is a game of hidden information, and the players
+do not act on states --- they act on what they have \emph{seen}. A bid
+changes no card and moves no counter, yet it is observed, remembered, and
+(as Section~\ref{sec:forgets} makes precise) it changes what a rational
+opponent believes. The decision points of the real game $G$ are therefore
+\emph{histories}, not states, and this section counts them exactly. The
+numbers justify, quantitatively, why every solution method in the companion
+papers works with beliefs rather than with the history tree itself.
+
+\subsection{Public histories}
+
+\begin{definition}[Public history]\label{def:pubhist}
+The \emph{public history} at a point of play is the full sequence of
+publicly observable events since the deal: for each round, a reorder marker,
+the bid chain as bid (color and count) and challenge events in order, each
+flip as a (deck, color) pair \emph{in order}, and a discard event naming the
+discarding seat but --- by rule --- not the discarded color.
+\end{definition}
+
+Two features distinguish this object from the states of
+Section~\ref{sec:automaton}. First, bids enter it: the physical state
+forgets a retracted bid chain the moment the round resolves, but the
+history keeps every bid ever made. Second, flip \emph{order} enters it:
+Lemma~\ref{lem:order} proved order irrelevant to the state, but the
+sequence of deck choices is observed, and in $G$ an observation is part of
+the decision point whether or not it moves a counter. Order irrelevance
+collapses the machine; it does not collapse the information.
+
+The history tree composes round records over the layered DAG of
+Figure~\ref{fig:layerdag}, with the loser-dependent starter rule coupling
+consecutive rounds. Counting it is a finite recurrence over post-discard
+hand sizes $(n_0,n_1)$ and the starter --- terminal histories, decision
+histories (nodes at which some seat acts: a reorder, a bid-or-challenge
+point, a flip-target point, a discard), and boundary histories are each
+counted by the same traversal. The recurrence and its closed subterms
+(seat-capped flip sequences, chain-prefix counts by parity) are implemented
+in \code{real\_game\_size.py}; Table~\ref{tab:realsize} reports the exact
+results.
+
+\begin{table}[t]
+\centering
+\caption{The real game $G$, exactly. Public histories are counted by the
+recurrence of Section~\ref{sec:realsize}; per-seat infosets by
+Theorem~\ref{thm:infosets}. All values are exact integers computed by
+\code{real\_game\_size.py}; scientific notation is shown for width. The
+public classes row repeats Corollary~\ref{cor:classcount}'s closed form
+$2K(H)^2+1$ for comparison.}
+\label{tab:realsize}
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+& $H=1$ & $H=2$ & $H=3$ & $H=4$ & $H=5$\\
+\midrule
+Terminal public histories & $32$ & $1.217\times10^{6}$ & $1.522\times10^{13}$ & $4.508\times10^{22}$ & $3.023\times10^{34}$\\
+Public decision histories & $55$ & $2.148\times10^{6}$ & $2.687\times10^{13}$ & $7.958\times10^{22}$ & $5.337\times10^{34}$\\
+Boundary histories        & $32$ & $1.254\times10^{6}$ & $1.569\times10^{13}$ & $4.647\times10^{22}$ & $3.116\times10^{34}$\\
+Infosets, per seat (starter) & $42$ & $945{,}053$ & $5.932\times10^{12}$ & $6.724\times10^{21}$ & $1.224\times10^{33}$\\
+Infosets, both seats      & $82$ & $1.890\times10^{6}$ & $1.186\times10^{13}$ & $1.345\times10^{22}$ & $2.448\times10^{33}$\\
+Public classes ($2K^2{+}1$) & $19$ & $163$ & $723$ & $2{,}313$ & $6{,}051$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At the full hand size the exact values deserve to be written out once,
+because ``$10^{34}$'' undersells the point that they are \emph{counted},
+not estimated:
+\begin{align*}
+\text{public decision histories of } G:\quad
+  &53{,}366{,}481{,}858{,}618{,}743{,}315{,}771{,}794{,}534{,}337{,}111\\
+\text{perfect-recall infosets (both seats)}:\quad
+  &2{,}448{,}351{,}139{,}319{,}171{,}077{,}272{,}326{,}424{,}233{,}304
+\end{align*}
+
+The opening round alone makes the state-versus-history gap vivid: the round
+automaton of Section~\ref{sec:round} has $119{,}036$ lattice-collapsed
+resolutions, but $1{,}888{,}256$ order-sensitive contest records ---
+a factor of $15.9$ from flip order and deck choice alone, before bid chains
+and cross-round composition multiply it to $10^{34}$.
+
+\subsection{Infosets, exactly}
+
+\begin{definition}[Infoset of $G$]\label{def:infoset}
+An infoset of seat $i$ is a distinct pair (public history at one of $i$'s
+action points, $i$'s private trajectory), where the trajectory is $i$'s
+initial color multiset, every ordering string $i$ has chosen at a reorder,
+and every discard color $i$ has chosen. This is exactly what perfect recall
+retains: $i$'s own actions and observations, and nothing of the
+opponent's hidden ones.
+\end{definition}
+
+Counting pairs is harder than counting histories, because a pair must be
+\emph{realizable}: consistent with $i$'s own reveals, and achievable by at
+least one opponent trajectory. The first constraint is a binomial
+prefix-consistency count (an ordering whose revealed prefix is fixed leaves
+$\binom{n-f}{\,r-p_r}$ free completions). The second is where this paper's
+main theorem earns its keep a second time:
+
+\begin{theorem}[Exact infoset counts]\label{thm:infosets}
+For heads-up Red/Black at hand size $H$, the number of perfect-recall
+infosets per seat is exactly as reported in Table~\ref{tab:realsize}; at
+$H=5$ the opening seat has
+$1{,}224{,}175{,}569{,}659{,}585{,}538{,}636{,}163{,}212{,}116{,}668$
+infosets and the responding seat $32$ fewer.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Walk rounds with state (own exact hand, opponent hand size, the public
+certainty bounds on the opponent, starter). Own-trajectory multiplicity
+per round is the product of the ordering-consistency binomial and the
+discard branching; opponent-side realizability of a candidate reveal
+$(p_r,p_b)$ reduces, by Theorem~\ref{thm:support} (support completeness),
+to non-emptiness of the folded bound interval:
+$\max(\rlb,p_r)+\max(\blb,p_b)\le n_{\mathrm{opp}}$. Because the bounds
+are \emph{exactly} the feasible set --- tight as well as sound --- this
+test admits every realizable pair and no unrealizable one, so the
+recurrence counts infosets exactly rather than bounding them. The
+recurrence is validated against explicit joint enumeration of the full
+game (both hands, both orderings, every deck choice) at $H=1$ ($42$ and
+$40$, exact) and $H=2$ ($945{,}053$ and $945{,}049$, exact).
+\end{proof}
+
+\begin{remark}[The starter's edge, in counts]
+The two seats' infoset counts differ by exactly $2$ at $H=1$, $4$ at
+$H=2$, and $32$ at $H=5$: the opener acts at one node the responder never
+sees (the opening bid), and the difference compounds only through the
+thin set of lines where that node is the last asymmetric thing that
+happens. The game value asymmetry of Paper~II has a
+combinatorial shadow this small.
+\end{remark}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.86\textwidth, height=62mm,
+  xlabel={hand size $H$}, ylabel={count (log scale)},
+  ymode=log, log basis y=10,
+  xtick={1,2,3,4,5},
+  ymin=1, ymax=1e37,
+  legend style={font=\scriptsize\sffamily, at={(0.02,0.98)},
+                anchor=north west, draw=rbgrey, fill=white},
+  grid=major, grid style={rblight},
+  every axis plot/.append style={thick},
+  tick label style={font=\scriptsize},
+  label style={font=\small\sffamily},
+]
+\addplot[color=rbred, mark=*, mark size=1.6pt]
+  coordinates {(1,55) (2,2147639) (3,2.687e13) (4,7.958e22) (5,5.337e34)};
+\addlegendentry{public decision histories of $G$}
+\addplot[color=rbblack, mark=square*, mark size=1.5pt]
+  coordinates {(1,82) (2,1890102) (3,1.186e13) (4,1.345e22) (5,2.448e33)};
+\addlegendentry{perfect-recall infosets (both seats)}
+\addplot[color=rbaccent, mark=triangle*, mark size=1.9pt]
+  coordinates {(1,19) (2,163) (3,723) (4,2313) (5,6051)};
+\addlegendentry{public classes (this paper's abstraction)}
+\end{axis}
+\end{tikzpicture}
+\caption{Thirty orders of magnitude between the game and its class
+abstraction. The history tree and the infoset space of $G$ grow
+super-exponentially in hand size; the public class space grows like the
+polynomial $2\bigl(\tbinom{H+3}{3}-1\bigr)^2+1$. Everything the class
+does not carry must be reconstructed as \emph{belief} --- the subject of
+Section~\ref{sec:forgets}.}
+\label{fig:growth}
+\end{figure}
+
+\subsection{What the numbers license}
+
+Three ratios summarize the section. The class abstraction compresses
+boundary histories by $\sim\!10^{31}$ ($3.1\times10^{34}$ boundary
+histories to $5{,}485$ reachable classes, through the intermediate
+$27{,}990$ concrete boundary states of Table~\ref{tab:master}). The
+infoset space of $G$ exceeds the class space by $\sim\!10^{29}$. And the
+infoset space exceeds anything enumerable by any machine by more than ten
+orders of magnitude. So there will be no solve of $G$ by tabulation, at
+this hand size or anywhere near it: any method that engages $G$ itself
+must represent histories through a summary that is small \emph{and}
+strategically sufficient. The class is the right summary of public
+\textbf{knowledge} (Theorem~\ref{thm:support}); what remains --- and what
+Section~\ref{sec:forgets} takes up --- is whether anything tractable is a
+sufficient summary of public \textbf{belief}.
+
+% =========================================================================
 \section{What the Public Class Forgets}\label{sec:forgets}
 
 The public class of Definition~\ref{def:class} is a summary, and summaries
 discard things. This section says exactly what it discards, because the
-omissions are not incidental --- they are the reason the companion paper's
-decomposition needs care.
+omissions are not incidental --- they are the reason Paper~II's
+decomposition needs care, and the raw material of Paper~III.
 
 \subsection{Knowledge versus belief}
 
@@ -1449,6 +1659,92 @@ class as bounds; bids are cheap talk and enter not at all. A player who
 opened $5\R$ last round and was caught has told the table something real,
 and the class forgets it completely.
 
+\subsection{The reachable belief family}\label{sec:belieffamily}
+
+The two omissions above say what beliefs the class \emph{loses}. This
+subsection proves the surprising positive counterpart: the beliefs
+themselves --- over both seats' private situations jointly, under
+\emph{any} strategy profile --- live in a family whose shape is a
+property of the game, not of the profile.
+
+Write seat $i$'s private \emph{type} at a boundary as $t_i=(r_i,x_i)$:
+the reds currently held and the reds among $i$'s own discards. (This is
+the private statistic the companion papers solve over; the pending
+material here is only its structure.)
+
+\begin{lemma}[Deal invariance]\label{lem:ainv}
+Let $a_i = r_i + x_i$. Then $a_i$ is constant along every play: it equals
+the number of reds dealt to seat $i$. Flips do not change it (revealed
+cards stay in the hand), a red discard moves one unit from $r_i$ to $x_i$,
+and a black discard changes neither.
+\end{lemma}
+
+\begin{theorem}[Rank-one factorization of reachable beliefs]\label{thm:rankone}
+Fix any strategy profile and any public history $h$ ending at a boundary
+of class $\kappa$. The joint posterior over type pairs factorizes as
+\[
+  \mu_h(t_0,t_1)\;\propto\;\lambda_\kappa(t_0,t_1)\cdot g_0(t_0)\cdot g_1(t_1),
+\]
+where $\lambda_\kappa$ is the deal-and-bounds prior of class $\kappa$ and
+$g_i$ is a per-seat nonnegative weight (a likelihood tilt) depending only
+on seat $i$'s strategy and $h$.
+\end{theorem}
+
+\begin{proof}
+All correlation between the seats' private situations originates in the
+deal, and by Lemma~\ref{lem:ainv} the deal enters the type pair only
+through $(a_0,a_1)$, which is a deterministic function of the types
+themselves --- so the deal coupling is absorbed into $\lambda_\kappa$ and
+rides along every transition unchanged. Conditional on types, each seat's
+observable actions depend only on its own type and $h$, so the likelihood
+of $h$ is a product of per-seat terms. Bayes' rule then yields the
+displayed form.
+\end{proof}
+
+\begin{corollary}[Model-free conditionals]\label{cor:modelfree}
+The conditional law of seat $i$'s type given the opponent's type,
+$\mu_h(t_i \mid t_{1-i})$, does not depend on $g_{1-i}$: any positive
+weighting of opponent types produces the same conditionals. An observer
+can be entirely wrong about how the opponent plays and still hold exactly
+correct own-side conditionals.
+\end{corollary}
+
+Theorem~\ref{thm:rankone} was found empirically before it was proved: over
+$17{,}140$ boundaries of $3{,}000$ self-play games under the solved
+profile of the companion papers, the measured rank-one residual of the
+exact posterior is $3.3\times10^{-16}$ --- floating-point zero --- with no
+exceptions. The theorem is load-bearing there twice over: it makes exact
+belief tracking cheap (two per-seat vectors instead of a joint matrix),
+and Corollary~\ref{cor:modelfree} is what lets a re-solving agent keep
+exact own-side conditionals even against an unmodeled opponent (Paper
+III's filter-repair construction).
+
+Together with Section~\ref{sec:realsize}, this locates the game's true
+sufficient statistic. The public class is the strategy-independent
+\emph{knowledge}; the reachable \emph{belief} state is the class plus two
+per-seat tilt vectors $(g_0,g_1)$ --- a finite-dimensional family, against
+the $10^{34}$ raw histories that induce it. Strategy dependence enters
+only through where in the family a profile lands, never through the
+family's shape.
+
+\subsection{Measured: how much the class forgets}\label{sec:forgetsmeasured}
+
+The gap of Table~\ref{tab:paths} was a two-path worked example. Under the
+solved profile of the companion papers it has been measured wholesale:
+the reach-weighted total-variation distance between the class prior
+$\lambda_\kappa$ and the true public posterior $\mu_h$ is
+$\mathbf{0.842}$ over self-play boundaries, rising monotonically with
+depth from $0.66$ (first boundary) to $0.95$ (endgame layers). Replacing
+the prior with the best possible \emph{class-keyed} statistic closes only
+about $17$ points of that gap, and small public-statistic enrichments
+(e.g.\ freshness bits distinguishing Path~A from Path~B above) add only
+$2$--$3$ more: most of the belief lives in within-class variation that no
+small public statistic reaches. These are profile-dependent numbers ---
+one representative profile, the solved one --- but they put a scale on
+the qualitative claim of this section: the class prior at depth is nearly
+orthogonal to the belief a competent observer actually holds. The
+companion papers carry the consequences.
+
 \subsection{Why the class stops where it does}
 
 It would be natural to ask for a finer public state, and worth seeing why
@@ -1470,8 +1766,15 @@ itself. Theorem~\ref{thm:support} is the formal version of that claim: the
 class is exactly the strategy-independent content of the public history.
 
 Everything beyond it --- the fold's path dependence, the bid history, the
-opponent's discard tendencies --- is belief rather than knowledge, and
-belongs to a paper that commits to a strategy model. That is the next one.
+opponent's discard tendencies --- is belief rather than knowledge. What
+this paper can still say about belief without committing to a strategy
+model is Section~\ref{sec:belieffamily}: the reachable belief family has
+a game-determined shape, $\lambda_\kappa\cdot g_0\cdot g_1$, and only the
+tilts $(g_0,g_1)$ are anyone's model of anyone. The class is the complete
+knowledge state; the class plus the tilts is the belief state; and the
+companion papers are, respectively, what happens when a solver uses only
+the first (Paper~II) and what it takes to responsibly use the second
+(Paper~III).
 
 \section{Summary of Counts}\label{sec:summary}
 
@@ -1505,14 +1808,40 @@ Public classes $2K^2+1$     & $19$ & $163$ & $6{,}051$\\
 \quad of which terminal     & $18$ & $54$ & $330$\\
 \quad of which reachable    & $17$ & $149$ & $5{,}485$\\
 Concrete boundary states    & $28$ & $345$ & $27{,}990$\\
+Public decision histories of $G$ & $55$ & $2{,}147{,}639$ & $5.337\times10^{34}$\\
+Perfect-recall infosets of $G$ (both seats) & $82$ & $1{,}890{,}102$ & $2.448\times10^{33}$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{What Comes Next}\label{sec:next}
 
-This paper deliberately stops at the dynamics. Three threads carry into the
-companion paper on counterfactual regret minimization.
+This paper stops at the dynamics and the information structure. Two
+companion papers carry the threads forward, and it is worth being precise
+about which thread each one takes.
+
+\paragraph{Paper II solves the class abstraction, exactly, and measures
+the cost.} Section~\ref{sec:realsize} rules out engaging the history tree
+directly, and Theorem~\ref{thm:support} makes the class the canonical
+small summary --- so Paper~II decomposes the game at boundaries, re-derives
+entry beliefs from the class prior $\lambda_\kappa$, and solves every one
+of the $5{,}721$ subgame-bearing classes with CFR+. That belief re-derivation
+is exactly the approximation Sections~\ref{sec:belieffamily}
+and~\ref{sec:forgetsmeasured} put a scale on, and Paper~II's second half
+measures what it costs in play: the abstraction's equilibrium is
+exploitable in the real game in ways its own convergence meters cannot
+see, including a converged action provably dominated in $G$.
+
+\paragraph{Paper III uses the belief family this paper identified.}
+Theorem~\ref{thm:rankone} says the reachable beliefs of $G$ form the
+finite family $\lambda_\kappa\cdot g_0\cdot g_1$; Paper~III tracks the
+tilts exactly with a public filter, re-solves each boundary under the
+true posterior instead of the prior, and pursues a \emph{certified upper
+bound} on real-game exploitability via safe re-solving.
+Corollary~\ref{cor:modelfree} is load-bearing there: own-side
+conditionals survive an arbitrarily wrong opponent model.
+
+Three technical threads from this paper recur in both.
 
 \paragraph{From public classes to information sets.} A player at a boundary
 knows their public class \emph{and} their own hand. The private component
@@ -1543,7 +1872,9 @@ approximation, not an identity --- it silently merges the two paths of
 Table~\ref{tab:paths}. Second, whether the decomposition is faithful
 depends on where the layers are cut relative to the private discard
 decision. Getting either wrong is not a small error. Both are the subject
-of the companion paper.
+of Paper~II --- the second cost an early solver generation a measured
+mispricing, and the first is the origin of everything Paper~III exists
+to repair.
 
 \appendix
 
@@ -1552,10 +1883,16 @@ of the companion paper.
 Two scripts accompany this paper.
 
 \begin{description}\itemsep3pt
-  \item[\code{state\_counts.py}] re-derives every count from the rules,
-        independently of the game engine, and prints all tables in this
-        paper. It includes the forward-closure search of
+  \item[\code{state\_counts.py}] re-derives every class-space count from
+        the rules, independently of the game engine, and prints the
+        corresponding tables. It includes the forward-closure search of
         Section~\ref{sec:reach}.
+  \item[\code{real\_game\_size.py}] computes every count in
+        Section~\ref{sec:realsize} --- histories, decision histories,
+        boundary histories, and the exact per-seat infoset counts --- as
+        exact big integers, and runs the brute-force joint-enumeration
+        validation of Theorem~\ref{thm:infosets} at $H=1,2$. Pure
+        standard library.
   \item[\code{verify\_against\_engine.py}] cross-checks the round-automaton
         counts, the class-space counts and the reachable set against the
         shipped implementation, so any disagreement is a genuine bug in one
@@ -1564,7 +1901,8 @@ Two scripts accompany this paper.
 
 \noindent Run them with
 \begin{quote}
-\code{cd research \&\& ../simulator/.venv/bin/python state\_counts.py}\\
+\code{cd research \&\& python3 state\_counts.py}\\
+\code{cd research \&\& python3 real\_game\_size.py}\\
 \code{cd research \&\& ../simulator/.venv/bin/python verify\_against\_engine.py}
 \end{quote}
 
