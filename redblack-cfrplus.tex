@@ -52,11 +52,24 @@
 \newcommand{\code}[1]{\texttt{\small #1}}
 \newcommand{\reg}{\ensuremath{R}}
 \newcommand{\infoset}{\ensuremath{I}}
+\newcommand{\game}{\ensuremath{G}}
+\newcommand{\gp}{\ensuremath{G'}}
+\newcommand{\epsG}{\ensuremath{\varepsilon_{\game}}}
+
+% ---- incident boxes: dated measured lessons ------------------------------
+\newenvironment{incident}[1]{%
+  \par\medskip\noindent
+  \colorbox{rbred}{\parbox{\dimexpr\linewidth-2\fboxsep}{%
+    \color{white}\small\sffamily\bfseries Incident --- #1}}%
+  \par\nopagebreak\vspace{3pt}\noindent
+  \begingroup\small\leftskip=7pt\rightskip=7pt}%
+  {\par\endgroup\nopagebreak\noindent
+   {\color{rbred}\rule{\linewidth}{0.8pt}}\par\medskip}
 
 \title{\bfseries The Red/Black Game II:\\[2pt]
-       \large Counterfactual Regret Minimization on a Decomposed\\
-       Heads-Up Game\\[4pt]
-       \normalsize (Setup, Algorithm, Measurement, and the Solve)}
+       \large Solving the Belief-Reset Abstraction Exactly,\\
+       and Measuring the Distance to the Real Game\\[4pt]
+       \normalsize (Setup, Algorithm, Metrology, Two Solves, and What They Cannot Certify)}
 \author{Noah Brauner}
 \date{}
 
@@ -66,27 +79,36 @@
 
 \begin{abstract}
 \noindent
-This paper specifies an algorithm for approximating equilibrium play in
-heads-up Red/Black. It is written for a reader who has never seen
-counterfactual regret minimization: Section~\ref{sec:cfr} builds CFR and
-CFR+ from the definition of regret, and every later section is expressed in
-those terms. The contribution is not CFR+ itself but the object it is run
-on. Rather than solving the whole game at once, we cut it into one subgame
-per round at the boundaries identified in Paper~I, solve each exactly, and
-bootstrap upward through a layered acyclic graph of $5{,}721$ public
-classes. We give a complete account of the information structure --- what an
-information set is, what a player's private state consists of, and exactly
-what a \emph{row} of the regret table is --- together with the vector-form
-layout that makes the whole thing a sequence of dense matrix operations.
-We are explicit about what the decomposition approximates: by Paper~I the
-public class pins the support of the public posterior but not its shape, so
-re-deriving beliefs at a boundary is a modeling choice and not an identity.
-We then report the completed solve: all 5,721 classes, a game value of
-51.33\% to the opening seat, and an evaluation of the resulting profile
-against prior bots. The measurement sections come first because they are
-what makes those numbers readable --- in particular the round-local meter
-reports uniform success while seat-mirror antisymmetry, which it cannot see,
-is violated by up to 0.11.
+Paper~I proved that heads-up Red/Black has $2.4\times10^{33}$
+perfect-recall infosets, so the real game $\game$ cannot be engaged by
+tabulation, and that its public class summarizes knowledge exactly but
+belief not at all. This paper solves --- exactly, twice --- the game those
+facts make natural: $\gp$, Red/Black with beliefs reset to the class prior
+at every round boundary. It is written for a reader who has never seen
+counterfactual regret minimization (Section~\ref{sec:cfr} builds CFR+ from
+the definition of regret), and its contributions come in matched pairs of
+construction and measurement. We give the decomposition over the
+$5{,}721$-class layered DAG, the row-level information structure, and the
+vector-form solver; a first full solve at $\mathrm{tol}=10^{-3}$ whose
+own convergence meter reported uniform success while seat-mirror
+antisymmetry --- which the meter cannot see --- was violated by up to
+$0.114$; and a second-generation solver (ordering-collapsed private
+states, seat-mirror reflection, a compiled kernel) that re-solves the
+entire game on a laptop in two hours at
+$\mathrm{tol}=10^{-5}..10^{-4}$ with mirrors exact by construction. The
+value of $\gp$ is $+0.0245$: \textbf{51.22\%} to the opening seat. The
+paper's second half measures the distance from $\gp$ to $\game$ with
+validated instruments, and the distance is large: the reach-weighted
+total-variation between the class prior and the true public posterior is
+$0.842$; a best-response probe certifies real-game exploitability
+$\epsG\ge0.598$ per game for the solved profile while its
+$\gp$-exploitability meters read $10^{-4}$; and the $\gp$ equilibrium
+provably plays a real-game-dominated action (the suicide flip) on path
+with probability $0.97$, because the belief reset launders the
+information cost of revealing one's own cards. Solving the abstraction,
+exactly, is demonstrably not solving the game --- and the demonstration is
+this laboratory's point: every claim above is measured, not estimated.
+Closing the gap is Paper~III's subject.
 \end{abstract}
 
 \section{Introduction}\label{sec:intro}
@@ -94,32 +116,44 @@ is violated by up to 0.11.
 Paper~I described heads-up Red/Black exactly: a deterministic, acyclic
 transition system whose public projection at a round boundary is two
 integers per seat plus the identity of the player owing a discard. That
-paper deliberately said nothing about how to play. This one does.
+paper deliberately said nothing about how to play. This one does --- and
+then measures, with validated instruments, exactly how far ``playing
+well in the abstraction'' sits from playing well in the game.
 
-The target is an $\varepsilon$-equilibrium: a pair of strategies neither of
-which can be improved on by much, with $\varepsilon$ measured rather than
+The target of the first half is an $\varepsilon$-equilibrium of the
+belief-reset abstraction $\gp$, with $\varepsilon$ measured rather than
 assumed. The method is counterfactual regret minimization, in its CFR+
-variant. The interesting part is not the algorithm, which is standard, but
-the decomposition it runs on and the honesty of the meters attached to it.
+variant. The interesting parts are not the algorithm, which is standard,
+but the decomposition it runs on, the metrology attached to it, and ---
+the second half --- what the finished, exact solve of $\gp$ turned out
+\emph{not} to mean. Three of this paper's results are negative, all three
+are quantitative, and we consider them the most exportable things in it:
+convergence meters certify the abstraction rather than the game
+(Section~\ref{sec:resmeters}); sibling-profile head-to-head play is not a
+solve meter (Incident, Section~\ref{sec:distance}); and an exactly
+converged equilibrium of $\gp$ plays a real-game-dominated action on path
+with probability $0.97$ (Theorem~\ref{thm:suicide}).
 
 \paragraph{Why decompose at all.}
-The whole game is too large to hold in one regret table. Paper~I counted
-$6{,}051$ public classes and, layer by layer, over $3\times10^{8}$
-(decision node $\times$ private state) pairs. Running one CFR+ instance over
-the entire game means holding all of them simultaneously and sweeping all of
-them every iteration. Instead we exploit the fact --- Paper~I,
-Theorem~3.7 --- that the class space is a \emph{layered directed acyclic
-graph}: every round removes exactly one card, so classes at layer $T'$ can
-only lead to classes at layer $T'-1$. That licenses backward induction. We
-solve the smallest layer first, then use its answers as terminal payoffs for
-the layer above, and so on up to the root.
+By Paper~I the real game has $5.3\times10^{34}$ public decision histories
+and $2.4\times10^{33}$ perfect-recall infosets: there is no regret table
+to hold. Even the class-collapsed game is large --- $6{,}051$ public
+classes and, layer by layer, over $3\times10^{8}$ (decision node $\times$
+private state) rows --- but it is finite in the useful sense. We exploit
+the fact --- Paper~I, Theorem~3.7 --- that the class space is a
+\emph{layered directed acyclic graph}: every round removes exactly one
+card, so classes at layer $T'$ can only lead to classes at layer $T'-1$.
+That licenses backward induction. We solve the smallest layer first, then
+use its answers as terminal payoffs for the layer above, and so on up to
+the root.
 
 \paragraph{What this buys and what it costs.}
 It buys tractability: each subgame is small enough to solve to high
 precision, and the layers are embarrassingly parallel within themselves.
 It costs exactness. A subgame needs to know the distribution over its own
 starting states, and that distribution is re-derived from the public class
-rather than carried down from above. Paper~I proved (its Theorem~10.1 and
+rather than carried down from above. Paper~I proved (its
+support-completeness theorem, Thm.~11.1 there, and
 the surrounding discussion) that the public class determines the
 \emph{support} of that distribution exactly but not its \emph{shape}. So the
 decomposition is an approximation whose size must be measured, not argued.
@@ -133,11 +167,16 @@ continuous with Paper~I.
 established. Section~\ref{sec:cfr} develops CFR and CFR+ from scratch.
 Section~\ref{sec:info} specifies the information structure and defines a
 row. Section~\ref{sec:decomp} gives the decomposition.
-Section~\ref{sec:vector} gives the vector-form implementation.
+Section~\ref{sec:vector} gives the vector-form implementation and the
+second-generation solver (ordering collapse, reflection, the kernel).
 Section~\ref{sec:approx} states what is approximated,
-Section~\ref{sec:meters} defines the meters, and
-Section~\ref{sec:results} reports the solve. Appendix~\ref{app:v1}
-documents an earlier boundary choice that failed, and why.
+Section~\ref{sec:meters} defines the meters --- including the two that
+speak about the real game --- and Section~\ref{sec:results} reports both
+solves, the selection experiments, and the measured distance to $\game$.
+Appendix~\ref{app:v1} documents an earlier boundary choice that failed,
+and why. Throughout, boxed \emph{incidents} record measured mistakes ---
+each one is a general lesson about decomposition solving that cost this
+project real time, preserved in citable form.
 
 % =========================================================================
 \section{What Paper I Established}\label{sec:recap}
@@ -167,9 +206,20 @@ Four results carry over and are used without reproof.
         public posterior exactly --- sound and tight --- but say nothing
         about its shape. Two histories reaching the same class can leave an
         observer with materially different beliefs.
+  \item[The game itself is beyond tabulation.] $5.3\times10^{34}$ public
+        decision histories; $2.4\times10^{33}$ perfect-recall infosets,
+        counted exactly. Whatever engages $\game$ must summarize.
+  \item[Reachable beliefs factorize.] Under any profile the boundary
+        posterior is the class prior times two per-seat tilts
+        (Paper~I, Thm.~11.3), with
+        opponent-model-free own-side conditionals. This paper does
+        \emph{not} use that structure --- resetting to the prior is
+        precisely discarding the tilts --- which is what
+        Section~\ref{sec:distance} prices. Paper~III uses it.
 \end{description}
 
-The last point is the one that constrains everything in this paper.
+The knowledge-is-not-belief point constrains everything in this paper;
+the factorization point is the door it leaves open.
 
 % =========================================================================
 \section{Regret, Counterfactual Regret, and CFR+}\label{sec:cfr}
@@ -784,10 +834,60 @@ Time per class scales as
 \]
 with throughput in row-iterations per second. Rows are structural
 (Table~\ref{tab:rowscale}); iterations are what convergence demands and are
-reported in the companion paper. The important structural fact is the
+reported in Section~\ref{sec:results}. The important structural fact is the
 top-heaviness: half the total row count lives at layer $9$ alone, and
 layers $8$ and $9$ together are $81.5\%$ of the work. Any scheduling decision
 should be made about those two layers first.
+
+\subsection{The second-generation solver}\label{sec:gen2}
+
+The first full solve (Section~\ref{sec:solve1}) was produced by the
+machinery above, run at $\mathrm{tol}=10^{-3}$ on a cloud fleet. Its
+autopsy (Section~\ref{sec:resmeters}) motivated three changes that
+together turned a \$23, twelve-hour fleet job into a two-hour laptop job
+at $10\times$--$100\times$ tighter tolerance. Each is a structural
+observation about the game, not an optimization trick, which is why they
+belong in this paper rather than in release notes.
+
+\paragraph{Ordering collapse.} A seat's private state included its chosen
+deck ordering. But orderings that present the same color \emph{prefix
+behavior} are strategically identical --- the opponent can only ever
+observe a prefix --- so ordering-sensitive states quotient into
+\emph{order classes}, exactly as Paper~I's Lemma on order irrelevance
+collapses procurement states. This is the same state-versus-information
+distinction doing work a second time: the information a player can ever
+transmit through an ordering is its prefix structure, and solving over
+anything finer is solving redundant copies. The collapse shrinks private
+state spaces by an order of magnitude at the deep layers.
+
+\paragraph{Seat-mirror reflection.} A class and its seat-swapped image
+are the same subgame with the labels exchanged, so only one of each pair
+is solved and the other is produced by reflection. This makes mirror
+antisymmetry --- the first solve's sharpest measured failure --- hold
+\emph{exactly, by construction}, and it halves the work. The honest check
+then moves one level up: re-solving a sample of reflected classes
+directly and comparing prior-weighted aggregates gives residuals of
+$1.5\times10^{-6}$ to $8.9\times10^{-6}$, against first-solve mirror gaps
+of up to $0.114$.
+
+\begin{remark}[Equilibrium multiplicity is not error]\label{rem:multiplicity}
+Cell-wise, a re-solved class and its reflection can disagree by as much
+as $6.7\times10^{-2}$ in individual type-pair conditional values while
+agreeing to $10^{-6}$ in every prior-weighted aggregate. Zero-sum
+equilibria pin values, not solutions; conditional-value cells are
+selection-dependent. Consumers must never compare cells across
+independently produced solutions --- a rule that returns with force in
+Paper~III, where per-type promises are exactly such cells.
+\end{remark}
+
+\paragraph{The kernel.} Profiling showed the solve was
+interpreter-bound: tiny dense matrices under huge node counts. Compiling
+the sweep (and, later, the best-response sweeps of
+Section~\ref{sec:meters}) into a JIT kernel recovered the arithmetic
+throughput the cost model above assumes. With all three changes the full
+game solves locally in $2$h$02$m at $\mathrm{tol}=10^{-5}..10^{-4}$, and
+the pipeline is deterministic: re-running it reproduces the solve
+bit-for-bit.
 
 % =========================================================================
 \section{What Is Approximated}\label{sec:approx}
@@ -802,7 +902,8 @@ re-derive it from the public class using the bounded-hypergeometric law of
 Section~\ref{sec:entrybeliefs}. We do \emph{not} carry down the posterior
 that the actual history would have induced.
 
-Paper~I makes precise what that discards. Its Theorem~10.1 shows the class
+Paper~I makes precise what that discards. Its support-completeness
+theorem (Thm.~11.1 there) shows the class
 determines the support of the public posterior exactly --- the certainty
 bounds are sound and tight. But the shape of the distribution on that
 support is not determined: two histories reaching the same class can leave
@@ -860,13 +961,33 @@ Best-respond across the whole class DAG --- in the round and in every
 successor round --- against the cached average profile.
 \end{definition}
 
-\textbf{Certifies:} exploitability in $G'$, the belief-reset game.
+\textbf{Certifies:} exploitability in $\gp$, the belief-reset game.
 \textbf{Does not certify:} exploitability in Red/Black. Two sub-meters are
 worth distinguishing: a \emph{lower bound}, obtained because any concrete
 deviating strategy's gain bounds the true best response from below; and an
 \emph{exact} figure for a redeal variant in which types are re-drawn at
 every boundary, where scalar continuations make backward induction exact.
 Neither removes the belief reset --- they measure inside it.
+
+\begin{incident}{the negative exploitability (2026-07)}
+An early composed-exploitability run reported $\varepsilon_{\text{comp}}
+< 0$, which is impossible for a true best response against any profile.
+The cause was the lower-bound structure itself: child-level best response
+maximizes a child-posterior-weighted total, so a parent can weight
+exactly the type pairs sitting \emph{below} the profile's value, and the
+composition of locally-best responses is not a globally best response.
+The number was a valid lower bound doing exactly what lower bounds do.
+Lesson: label every meter with its bound direction \emph{in the code},
+and treat any ``impossible'' reading as a definition surfacing, not a
+bug to patch away. A second incident lived one layer down: the
+best-response context loaded per-state tables into per-shared-row
+storage, silently misaligning every class where the discarder collapse
+makes those indexings differ --- voiding every composed figure computed
+before the fix. Meters need gates too: the kernel best response is
+validated against an independent reference implementation on $1{,}184$
+classes to $|{\Delta}|\le4.4\times10^{-16}$ before any number it
+produces is reported.
+\end{incident}
 
 \subsection{The perfect-recall oracle}
 
@@ -879,9 +1000,47 @@ the value with exact best responses.
 
 \textbf{Certifies:} the true value, in the real game, with no belief reset
 anywhere. \textbf{Limitation:} the tree is built explicitly, so this is
-restricted to small classes. It is the only instrument here that speaks
-about Red/Black rather than about $G'$, and it is the one that scales
-worst --- a combination worth stating plainly rather than burying.
+restricted to small classes. Until the next subsection it was the only
+instrument here that speaks about Red/Black rather than about $\gp$, and
+it is the one that scales worst --- a combination worth stating plainly
+rather than burying.
+
+\subsection{Instruments for the real game}\label{sec:realmeters}
+
+The first solve was evaluated with the three instruments above and the
+seat mirror. The distance results of Section~\ref{sec:distance} required
+two more, both of which certify statements about $\game$ itself and both
+of which scale.
+
+\begin{definition}[TV meter]
+Play the profile against itself; at every boundary compute the exact
+public posterior $\mu_h$ over type pairs (a forward pass over the
+factored belief family of Paper~I, validated against brute-force replay
+to $10^{-12}$) and report the reach-weighted total variation
+$\mathrm{TV}(\mu_h,\lambda_\kappa)$ against the class prior the solver
+used instead.
+\end{definition}
+
+\textbf{Certifies:} how much belief the reset actually destroys, on the
+profile's own play path --- the size of the modeling choice, measured
+where it is being made.
+
+\begin{definition}[LBR probe]\label{def:lbr}
+A local best responder plays one seat against the stored profile. It
+maintains the exact opponent-type posterior conditioned on the public
+history and its own private trajectory, prices each of its actions by
+contracting the profile's per-class continuation values against that
+posterior, and plays the argmax. Its measured win-rate gain over the
+profile-vs-profile baseline (mirrored seeds, Wilson interval) is a
+\emph{certified lower bound} on the profile's real-game exploitability
+$\epsG$.
+\end{definition}
+
+\textbf{Certifies:} $\epsG \ge$ the measured gain --- certification comes
+from the games actually won, not from the derivation, so it holds no
+matter how crude the responder is. \textbf{Does not certify:} any upper
+bound. A profile the probe cannot beat is not thereby safe; upper bounds
+are Paper~III's whole subject.
 
 \subsection{Summary}
 
@@ -896,9 +1055,11 @@ game.}
 Instrument & Scope & Certifies about & Scales?\\
 \midrule
 $\varepsilon_{\text{round}}$ & one class & convergence, given inherited values & yes\\
-$\varepsilon_{\text{comp}}$ & class DAG & exploitability in $G'$ & yes\\
+$\varepsilon_{\text{comp}}$ & class DAG & exploitability in $\gp$ (lower bd.) & yes\\
 Oracle bracket & one small class & the true value in Red/Black & no\\
 Seat mirror & class pair & internal consistency & yes\\
+TV meter & play path & size of the belief reset in $\game$ & yes\\
+LBR probe & whole game & $\epsG$ lower bound, certified by games & yes\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -912,21 +1073,37 @@ cannot see. It is the only instrument in the table that is both scalable
 and sensitive to composition, which makes it the practical tripwire for a
 large run.
 
-\subsection{What would constitute a defensible claim}
+\subsection{The defensible claim, and the two-axis rule}
 
-Not ``the game is solved.'' The defensible form is a conjunction: a stated
-round-local tolerance across all classes; a composed exploitability in
-$G'$; an oracle agreement on the small classes where it can be computed;
-mirror consistency as a function of depth; and an explicit statement that
-the profile is an equilibrium of $G'$ rather than of Red/Black. The
-companion paper reports these.
+Not ``the game is solved.'' The defensible form is a conjunction: a
+stated round-local tolerance across all classes; a composed
+exploitability in $\gp$; an oracle agreement on the small classes where
+it can be computed; mirror consistency as a function of depth; and an
+explicit statement that the profile is an equilibrium of $\gp$ rather
+than of Red/Black. Section~\ref{sec:results} reports all of these ---
+and then reports the two real-game instruments alongside, because the
+central empirical finding of this paper is that \textbf{the two axes
+decouple}: profile variants that differ by $0.05$ per game in
+$\gp$-exploitability measure identically on every real-game instrument,
+and the profile whose $\gp$ meters read $10^{-4}$ is exploitable for
+$\ge0.598$ per game in $\game$. Any report that cites one axis without
+the other is, on this evidence, misleading regardless of which axis it
+picks.
 
 \section{Results}\label{sec:results}
 
-The game has been solved: all $5{,}721$ classes, every layer from $T'=2$ to
-the root.
+The abstraction $\gp$ has been solved twice: all $5{,}721$ classes, every
+layer from $T'=2$ to the root, first at $\mathrm{tol}=10^{-3}$ on a cloud
+fleet, then --- after the first solve's autopsy --- at
+$\mathrm{tol}=10^{-5}..10^{-4}$ on a laptop with the second-generation
+solver of Section~\ref{sec:gen2}. This section reports both, in
+chronological order, because the first solve's failure is what makes the
+second one's claims legible; then the equilibrium-selection experiments;
+then the measured distance from $\gp$ to $\game$
+(Section~\ref{sec:distance}), which is the half of this section we expect
+to age best.
 
-\subsection{The solve}
+\subsection{The first solve}\label{sec:solve1}
 
 \begin{table}[htbp]
 \centering
@@ -973,20 +1150,10 @@ falling to $100$ at $T'=5$, then climbing to $350$ at $T'=9$ and $475$ at
 the root. Extrapolating a cost model from the shallow layers alone reads the
 descending arm and underestimates the deep ones.
 
-\subsection{The value of the game}
+The first solve priced the root at $v = +0.0266$ ($51.33\%$ to the
+opening seat) --- a number the next subsection retires.
 
-\[
-  v(\text{root}) \;=\; +0.0266 \quad\Longrightarrow\quad
-  \mathbf{51.33\%} \text{ to the player who opens.}
-\]
-
-So the opening seat holds an edge of about $1.3$ percentage points. That sits
-between the two small games solved by hand in Paper~I --- $51.92\%$ at
-$T'=2$ and $52.83\%$ at the four-card root --- and it should be read with
-the caveat of Section~\ref{sec:resmeters}: to about $\pm0.1$, not to the
-digit.
-
-\subsection{What the meters say}\label{sec:resmeters}
+\subsection{The autopsy: what the meters saw and did not}\label{sec:resmeters}
 
 Every class converged: $\varepsilon_{\text{round}} \le 10^{-3}$ everywhere,
 with no class hitting the iteration cap. On the round-local meter the solve
@@ -1018,72 +1185,200 @@ $T'=9$, the worst layer in the entire solve, is the layer every game enters
 on its second round. The best-calibrated numbers are the ones a player sees
 last.
 
-\subsection{Playing the profile}
+\subsection{The solve of record}\label{sec:solve2}
 
-The solved profile was mapped into the game engine and evaluated over
-paired games (each deal played from both seats):
+The second-generation solver (Section~\ref{sec:gen2}) re-solved the
+entire game in $2$h$02$m on a laptop, eight workers, at layer tolerances
+of $10^{-5}$ to $10^{-4}$ --- $10\times$ to $100\times$ tighter than the
+first solve --- with root
+$\varepsilon_{\text{round}} = 4.9\times10^{-5}$ and six classes above
+their layer tolerance (all within a $10^{-5}$ band of it). Mirror
+antisymmetry is exact by construction; the reflection residual against
+independently re-solved mirrors is $1.5\times10^{-6}..8.9\times10^{-6}$.
+The pipeline is deterministic and reproduces itself bit-for-bit.
+
+\[
+  v(\text{root}) \;=\; +0.02449 \quad\Longrightarrow\quad
+  \mathbf{51.22\%} \text{ to the player who opens.}
+\]
+
+This is the value of $\gp$ of record. The first solve's $51.33\%$ was
+carrying about $0.11$ points of composition error --- consistent with its
+own mirror-gap table, and a useful calibration of what
+$\mathrm{tol}=10^{-3}$ plus belief-reset bootstrapping actually delivers.
+The opening seat's edge sits between the two small games solved by hand
+in Paper~I ($51.92\%$ at $T'=2$, $52.83\%$ at the four-card root), and
+the oracle bracket agrees with the solved value to $1.4\times10^{-4}$ on
+every class small enough to bracket ($T'\le3$).
+
+\subsection{Equilibrium selection, priced}\label{sec:selection}
+
+Zero-sum equilibria pin values, not strategies, so within measured
+indifference there is freedom to select. Two selections were built and
+priced --- and the price list is itself a finding:
 
 \begin{center}\small
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-Opponent & Win rate & Wilson 95\% CI & Games\\
+Profile variant & $\gp$ root value & $\varepsilon_{\text{comp}}$ in $\gp$ (/game) & suicide rate (raw)\\
 \midrule
-gen6 CFR (previous best) & $78.85\%$ & $[77.56,\,80.09]$ & $4{,}000$\\
-Heuristic & $87.10\%$ & $[86.03,\,88.10]$ & $4{,}000$\\
-Random & $99.88\%$ & $[99.71,\,99.95]$ & $4{,}000$\\
+base (solve of record) & $+0.02449$ & $0.4533$ & $3.6\%$\\
+dominance-pruned & $+0.02397$ & $0.5053$ & $0$\\
+concealment tie-break & $+0.02449$ & $0.5003$ & $2.05\%$\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Across $283{,}793$ decisions the profile drove \emph{every} decision:
-zero fallbacks, zero out-of-range positions, zero on-demand solves. Since a
+The pruned variant removes the suicide flip (Section~\ref{sec:distance})
+from the action set; it surrenders $5.2\times10^{-4}$ of $\gp$ root value
+and $+0.052$/game of $\gp$-composed exploitability --- the measured price
+of refusing an action that is optimal in $\gp$ and dominated in $\game$.
+The tie-break selects, among value-equal actions, the one that reveals
+less; its purity costs $+0.047$/game of $\gp$ exploitability, roughly
+$50\times$ the naive per-decision band intuition, because the band bounds
+the value shift, not the composed-best-response shift. \textbf{Neither
+price is visible on any real-game instrument}: LBR, raw and guarded
+arenas, and the bot battery all measure the three variants as identical.
+That is the two-axis decoupling of Section~\ref{sec:meters}, measured.
+
+\subsection{Playing the profile}
+
+The solved profiles were mapped into the game engine and evaluated over
+mirrored pairs (each deal played from both seats; $2{,}000$ pairs per
+cell; play-time dominance guards on):
+
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Profile & vs gen6 CFR & vs heuristic & self-play seat-0\\
+\midrule
+first solve (historical) & $78.85\%$ $[77.6,\,80.1]$ & $87.10\%$ $[86.0,\,88.1]$ & $51.0\%$\\
+solve of record & $79.97\%$ $[78.7,\,81.2]$ & $87.55\%$ $[86.5,\,88.5]$ & $50.4\%$\\
+dominance-pruned & $\mathbf{81.55\%}$ $[80.3,\,82.7]$ & $85.25\%$ $[84.1,\,86.3]$ & $51.7\%$\\
+concealment tie-break & $80.13\%$ $[78.9,\,81.3]$ & $86.88\%$ $[85.8,\,87.9]$ & $51.0\%$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Across every evaluation the profile drove \emph{every} decision: zero
+fallbacks, zero out-of-range positions, zero on-demand solves. Since a
 misplaced boundary or a pre- versus in-round size confusion surfaces as a
-fallback, that is meaningful evidence the class mapping is correct, and all
-$15{,}643$ joint discard-and-reorder commitments replayed exactly.
+fallback, that is meaningful evidence the class mapping is correct, and
+every joint discard-and-reorder commitment replayed exactly. Self-play
+seat-0 rates bracket the solved root ($51.22\%$) within their intervals:
+table, mapping and engine agree.
 
-The sharpest check is self-play, which closes the loop between the solved
-number and the running game:
+The deployed profile is the concealment tie-break variant: value-neutral
+against every measured opponent, strictly more concealing by
+construction, and it halves the raw suicide mass. The pruned variant
+trades $2.3$ points against the heuristic for $1.6$ against gen6 ---
+a reminder that against non-equilibrium opponents, removing a
+$\gp$-optimal action changes matchups in both directions.
+
+Two caveats frame the table. The win rates do not measure distance from
+equilibrium: none of these opponents probes the abstraction. And the raw
+profile is not safe alone --- with guards off, self-play logged suicide
+flips at $3.6\%$ of procurement decisions and hundreds of impossible
+bids; the guard layer removes both, which also means \textbf{guards-on
+parity between profile variants is a floor, not a finding}: guards prune
+exactly the action classes where table improvements would show.
+
+\subsection{The distance to the real game}\label{sec:distance}
+
+Everything above is internal to $\gp$ or to a bot ladder. This
+subsection reports what the real-game instruments say about the solve of
+record, and it is the paper's destination.
+
+\paragraph{The reset destroys most of the belief.} The TV meter over
+$2{,}000$ self-play games ($11{,}320$ boundaries): reach-weighted
+$\mathrm{TV}(\mu_h,\lambda_\kappa) = \mathbf{0.842}$ $[0.839,\,0.845]$,
+monotone with depth --- $0.66$ at the first boundary, $0.95$ by the
+endgame layers. The class prior at depth is nearly orthogonal to the
+belief an exact observer holds. A cross-fitted refinement ladder
+localizes the loss: replacing the prior with the \emph{true
+class-conditional posterior mean} closes the gap only from $0.842$ to
+$0.671$, and enriching the class key with freshness bits (distinguishing
+Paper~I's Path~A from Path~B) adds only $\approx0.024$ more. Most of the
+destroyed belief is \emph{within-class} variation that no small public
+statistic reaches --- the tilts of Paper~I's factorization, which only
+actual belief tracking recovers.
+
+\paragraph{The abstraction's equilibrium is qualitatively wrong in
+$\game$.} The sharpest single result:
+
+\begin{theorem}[The suicide flip is $\gp$-optimal and
+$\game$-dominated]\label{thm:suicide}
+Call a \emph{suicide flip} a bidder's choice to flip its own deck when
+its own top card is certainly off-color. In real Red/Black the action is
+weakly dominated: flipping the challenger's deck preserves the winning
+branch, loses the same contests, and reveals the opponent's card instead
+of one's own. Yet in $\gp$, at a probe class solved with successor
+values held fixed, the exact equilibrium plays the suicide flip on path
+with probability $0.97$; exact best response prices it $+0.026$ over the
+dominating alternative; and a solve with the action masked cannot
+converge under an unmasked best response (its exploitability floors at
+$0.115$).
+\end{theorem}
+
+The mechanism is the belief reset laundering the self-reveal: busting
+your own known card raises your public bound, and the successor
+re-derives beliefs from the class --- a diffuse prior --- where a real
+opponent's posterior after the bid-then-deliberate-bust line would be
+devastating. The $3.6\%$ on-path suicide rate of the raw profile is not
+unconverged residue; it is \emph{correct play in the wrong game}. This
+also retires the first solve's reading of the same phenomenon (the
+``noise laundered into confident advice'' hypothesis): the second solve
+converged two orders tighter and the rate did not move. Convergence
+cannot fix an abstraction artifact at any tolerance; only the action set
+or the beliefs can.
+
+\paragraph{Certified real-game exploitability.} The LBR probe
+(Definition~\ref{def:lbr}), $3{,}000$ mirrored games per profile, zero
+fallbacks:
 \[
-  \text{measured seat-0 rate } 0.5100,\ \text{95\% CI } [0.4881,\,0.5319]
-  \quad\text{vs solved } 0.5133 .
+  \epsG \;\ge\; 0.598\ [0.569,\,0.626] \text{ per game (value range }
+  [-1,1]\text{)},
 \]
-The solved value falls inside the interval. Table, mapping and engine agree.
-The residual, $-0.0033$, has the sign the theory predicts --- a profile
-optimal in $G'$ gives up a little when played in Red/Black --- though it is
-far inside the interval and so not established.
+identically for the solve of record and for \emph{every} selection
+variant --- against $\gp$-composed exploitability differences of
+$0.05$/game between those same variants, and per-round convergence of
+$10^{-5}$. The two axes decouple completely, in both directions: the
+$\gp$ meter prices exploitability in exactly the abstraction whose
+belief structure the real game does not share.
 
-\subsection{What is not established}
+\begin{incident}{head-to-head is not a solve meter (2026-08)}
+The second solve, converged $100\times$ tighter to $\gp$ than the first,
+\emph{lost} their raw head-to-head arena: $48.2\%$ $[46.8,\,49.6]$,
+$p=0.014$, over $4{,}800$ games --- a result that would have justified
+reverting it. An overnight campaign of $216{,}000$ games proved the
+matchup a dead tie ($50.04\%$ $[49.8,\,50.3]$), and deterministic replay
+reproduced the $48.2\%$ on its exact seed family: an unlucky draw
+amplified by pair-correlated $p$-values. The equilibrium guarantee
+floors value inside $\gp$ only; in $\game$ neither profile is an
+equilibrium, and two non-equilibria are not ordered by their distance to
+the $\gp$ solve. Lesson: a gate of the form ``new solve beats old solve
+in games'' tests pairwise interaction plus sampling noise, not solution
+quality. The honest instruments are the composed meters and the probe.
+\end{incident}
 
-Three limits, stated plainly.
+\subsection{What is established, and what is not}
 
-\textbf{The win rates do not measure distance from equilibrium.} Neither
-gen6 nor the heuristic probes the abstraction, so neither can detect a
-$0.11$ mirror gap or the concealment blindness below. Beating them shows the
-table is sound and playable; it says nothing about exactness.
+Established: $\gp$ is solved, exactly, reproducibly, with every meter
+green and the oracle in agreement where it can see; and the distance
+from $\gp$ to $\game$ is measured --- $\mathrm{TV}\ 0.842$,
+$\epsG\ge0.598$, one on-path dominated action with its mechanism
+identified.
 
-\textbf{The raw profile is not safe alone.} With the play-time guards
-disabled, self-play logged $1{,}024$ suicide flips in $28{,}368$
-procurement decisions and $294$ impossible bids in $28{,}211$. With guards
-on, both are zero. The guard layer is not cosmetic: the unguarded policy
-makes locally losing plays, concentrated exactly where value flows through
-the successor bootstrap.
-
-\textbf{One strategic defect is identified and reproducible.} In a $3$-vs-$5$
-round the profile flips its \emph{own} deck with probability one while
-holding a single black against an opponent certainly holding three. Both
-flip orders have identical win probability, and flipping the opponent's
-weakly dominates, because it preserves the option of never revealing your
-own card. The solver cannot see this: the decision has \emph{zero}
-round-local payoff difference, so all of its value sits in successor values,
-and it acted on a $0.033$ margin where the measured error at that layer is
-$0.0495$. Sampled over $12.0$M two-way procurement rows, $92.6\%$ of such
-decisions are genuinely mixed and only $3.9\%$ pure --- but $42.1\%$ of the
-pure ones rest on margins inside the noise floor. CFR+ goes pure whenever
-values differ at all, so solver noise is laundered into confident advice.
-
-All three trace to Section~\ref{sec:approx}: beliefs re-derived at each
-boundary from a statistic that Paper~I proves is support-complete but not
-distribution-complete. Closing them is a redesign, not a tuning exercise.
+Not established: any upper bound on $\epsG$, for this or any profile.
+Every real-game instrument in this paper bounds from below. The evidence
+that the gap is closable is already in hand --- re-solving boundaries
+under the exact posterior (the tilts this paper discards) cuts the
+probe's certified bound from $0.598$ to $0.363$ at a shallow depth gate,
+$0.183$ deeper, and $\approx0.013$ with full carrying, a complete
+dose-response --- but carrying beliefs soundly, and \emph{certifying} the
+result against all opponents rather than one probe family, is a
+different problem with different mathematics. That problem, its
+theorem, its instruments, and its current honest status are Paper~III.
 
 \appendix
 
