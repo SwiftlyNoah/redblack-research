@@ -737,13 +737,25 @@ Lemma~\ref{lem:margin} arrived at from the other end.
 
 With that in place the per-resolve residual factors exactly as
 $r = \varepsilon_b + (\text{successor sandwich at its realized range})$,
-verified to $10^{-5}$. At $T'{=}3$ with successors solved at their
-realized ranges the successor sandwich is
-$3.0\times10^{-4}$ to $4.5\times10^{-4}$, against the
-$6.3\times10^{-3}$ per resolve that
-Corollary~\ref{cor:cert} allows. The leaf term clears the gate by a
-factor of fifteen, and the fattening worry that motivated item~2 is not
-what binds.
+verified to $10^{-5}$. Measured at the class prior, with successors
+solved exactly at their realized ranges wherever a perfect-recall tree
+builds, the sandwich is $3.0\times10^{-4}$ to $4.5\times10^{-4}$ at
+$T'{=}3$ and $3.1\times10^{-4}$ at $T'{=}4$, against the
+$6.3\times10^{-3}$ per resolve Corollary~\ref{cor:cert} allows. Two
+rungs of the ladder are therefore flat and far inside the budget.
+
+The extrapolation stops there, and an earlier draft of this remark did
+not. Exact successor solves exist only where a tree builds, which is
+$T'\le3$ entirely and $T'{=}4$ for $80$ of $165$ classes covering $34\%$
+of played mass. At $T'{=}5$ the successors must be priced from stored
+libraries, and the sandwich is $1.1\times10^{-2}$, thirty-five times the
+layers below. That figure confounds two causes: the ladder fattening, and
+the libraries being thin. It leans towards the latter, since enriching
+the library from four entries to all of them moves it from
+$3.2\times10^{-2}$ to $1.1\times10^{-2}$, and since the hard $T'{=}4$
+covers were themselves left open at residual $3.6\times10^{-2}$ to
+$1.5\times10^{-1}$ by an entry cap imposed for time. Layers $6$ through
+$9$, which carry most of the charge, remain untouched.
 
 What binds is a fixed point: the price depends on the successor's range,
 the range on the parent's play, the play on the price. Solving afresh at
@@ -758,7 +770,21 @@ equilibria of the same successor at the same range move the per-type
 caps by at most $3.3\times10^{-3}$, and no leaf range is degenerate.
 Depth-limited solvers whose leaf values depend on the ranges the solve
 produces re-evaluate those values at the current iterate on every
-iteration; that variant is untried here and is the next measurement.
+iteration; that variant is untried here.
+
+A structural consequence outranks it. Pricing a leaf at $T'{=}6$ by
+recursion would require the $T'{=}5$ cap at its realized range, which
+requires a round sweep over $T'{=}4$ leaves priced at theirs, and so on;
+with $5.0\times10^{4}$ public resolutions in a $T'{=}9$ round falling to
+$32$ at $T'{=}2$, the product is astronomical. The certificate therefore
+needs a per-class, range-parameterized cap \emph{function} at every
+layer, built once from the bottom and stored, so that pricing a leaf is
+a lookup. Storing the values is cheap, a few megabytes over all $2{,}860$
+classes. Storing the strategies the enforcement rule must commit to is
+not: a round strategy at $T'{=}9$ carries $2.2\times10^{5}$ infoset rows.
+Constructing and pricing that ladder is the open problem, and the
+fixed point above governs how expensive each rung is rather than whether
+it exists.
 \end{remark}
 
 \paragraph{The sandwich.} Table~\ref{tab:sandwich} reports both jaws.
@@ -813,9 +839,11 @@ dependency order. The research risk is concentrated in item~2.
 \item \textbf{Certified cap propagation upward.} A $T'{\ge}5$ cap
       against a strategy is one kernel exact-best-response round sweep
       with capped leaves, sound by Theorem~\ref{thm:comp}'s machinery.
-      The open question was whether six layers of propagation stay
-      tight. Remark~\ref{rem:fixedpoint} reports the measurement: they
-      do, and the obstruction lies elsewhere.
+      The open question is whether six layers of propagation stay
+      tight. Remark~\ref{rem:fixedpoint} reports two rungs flat and far
+      inside budget, a third that is thirty-five times worse for
+      reasons not yet separated, and the rest untouched. This remains
+      the program's research risk, now with a cost model attached.
 \item \textbf{Enforcement transcription.} Library entries transcribed
       to playable round strategies, with per-type minimization at
       resolve time. This converts measured margins into a-priori
