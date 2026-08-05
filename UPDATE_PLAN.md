@@ -78,7 +78,7 @@ and over-claims in others.
    G'-internal; the upper-bound program (safe resolving + certified
    leaf error) is Note 3's subject. Summarize the v5 finding that
    motivates it: full belief carrying closes essentially the entire
-   certified gap as far as the probe can see (0.598 -> ~0.013), i.e.
+   certified gap most of the way (0.598 -> 0.078 [0.016, 0.139]), i.e.
    the reset is not just the dominant term, it is - to this
    instrument - the whole of it. Beliefs pay in defense, not offense
    (head-to-head gain ~0).
@@ -125,7 +125,7 @@ audit adopted in full. The note must not read stronger than the audit.
    0.4-2.0 slack locates the loose inequality).
 
 5. **State the closing sandwich** as the window's honest end state:
-   probe lower bounds 0.013 (unsafe full carry) / 0.160 (safe, stored
+   probe lower bounds 0.078 (unsafe full carry, n=1000) / 0.160 (safe, stored
    promises) / 0.113 (safe, certified promises); upper bound trivial.
    The certificate is measured, complete, and fat - and the distance
    is entirely honorability of the price surface at T'>=4.

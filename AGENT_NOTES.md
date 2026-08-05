@@ -74,7 +74,7 @@ When solver v7 work lands, update in this order:
   research risk - if it fails, the program section needs a rewrite,
   not an edit.
 - **The abstract and the closing status line** hard-code the sandwich
-  [0.013, 2] and "honorability at T'>=4". Update both with any change
+  [0.078, 2] and "honorability at T'>=4". Update both with any change
   to either jaw.
 - If the 0.10 ship gate is MET: the paper's framing flips from
   "program with measured intermediates" to "result"; retitle the

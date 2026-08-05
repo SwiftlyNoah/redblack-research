@@ -31,7 +31,7 @@ generations v2-v6. Headlines: the real game has exactly 2.448e33
 perfect-recall infosets (counted, not estimated); the abstraction's value
 is 51.22% to the opener; the solved profile's real-game exploitability is
 certified >= 0.598/game and full belief carrying drives the probe's bound
-to ~0.013; the certificate's upper jaw is still trivial, with the
+to 0.078 [0.016, 0.139]; the certificate's upper jaw is still trivial, with the
 distance located in one named quantity (Paper III). `UPDATE_PLAN.md`
 records the audit that drove the rewrite; `AGENT_NOTES.md` is the
 maintenance protocol, including exactly what in Paper III is a
@@ -111,13 +111,13 @@ head-to-head overturn) as citable lessons.
 
 The upper-bound program, shipped honestly as a program: re-solving each
 boundary under the exact posterior (tracked over Paper I's belief family)
-closes the probe's certified gap almost entirely (0.598 -> ~0.013, a
+closes most of the probe's certified gap (0.598 -> 0.078, a
 complete dose-response), but naive re-solving admits adversarial
 counterexamples, so the paper builds the certification machinery - a
 safe-resolving gadget with live-measured margins and an
 opponent-model-free composition theorem, every constant re-derived by
 script. Current audited status, stated plainly: the sandwich is
-[0.013, trivial]; fixed promise surfaces are certifiably dead; the whole
+[0.078, trivial]; fixed promise surfaces are certifiably dead; the whole
 remaining distance is honorability of the price surface at layers
 T' >= 4, with a four-item program aimed at it.
 
