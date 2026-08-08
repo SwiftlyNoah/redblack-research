@@ -49,8 +49,10 @@
 
 \begin{abstract}
 \noindent
-Paper~II solved the abstraction $\gp$ of heads-up Red/Black exactly
-and certified that the solved profile is exploitable in the real game
+Paper~II solved the abstraction $\gp$ of heads-up Red/Black to stated
+per-class tolerances (its 2026-08 colour-swap audit later bounded how
+much of $\gp$ that pins down; see the remark in Section~2) and
+certified that the solved profile is exploitable in the real game
 $\game$ for at least $0.598$ per game of a $2.0$ range. This paper
 pursues the other direction: an agent together with a computed upper
 bound on its real-game exploitability. There are two results and one
@@ -85,7 +87,7 @@ Papers~I and II left heads-up Red/Black in a precisely known position.
 The real game $\game$ cannot be tabulated ($2.4\times10^{33}$
 infosets). Its reachable beliefs live in a rank-one family (Paper~I,
 Thm.~10.3). The abstraction $\gp$, which resets beliefs at every round
-boundary, is exactly solvable, and Paper~II solved it. Discarding the
+boundary, is tabulable, and Paper~II solved it. Discarding the
 carried beliefs costs at least $0.598$ per game of a $2.0$ payoff
 range in real-game exploitability, a bound certified by Paper~II's
 local best-response probe, which wins actual games against the solved
@@ -150,9 +152,26 @@ $[-1,1]$, so the payoff range is $U=2$. $\gp$ is the belief-reset
 abstraction of $\game$ (Paper~I, Definition~10.6): the game in which,
 at every round boundary, both players' beliefs are replaced by the
 prior of the boundary's class, discarding the tilts accumulated during
-play. Paper~II solved $\gp$ exactly; its solution (the \emph{stored
-profile}, with \emph{stored values} at every class) is the raw
-material for everything below.
+play. Paper~II solved $\gp$ class by class; its solution (the
+\emph{stored profile}, with \emph{stored values} at every class) is
+the raw material for everything below.
+
+\begin{remark}[What the stored values determine, 2026-08]
+Paper~II's colour-swap audit
+(\texttt{scripts/check\_symmetry.py}) showed that the stored
+second-generation profile determines the values of $\gp$ only to
+about $0.03$ and its type-conditional values to about $0.37$: CFR+
+pins each class's aggregate value but selects arbitrarily among
+per-type-pair decompositions, and the bootstrap composes the
+selection noise. Every leaf price this paper's resolves read from the
+stored surface carries that indeterminacy, which is of the same order
+as the per-resolve leaf dishonorability measured in
+Section~\ref{sec:results}. How much of the measured leaf term is
+intrinsic to depth-limited resolving and how much was the stored
+surface being undetermined is answered by re-running these
+instruments against the third-generation unique-selection solve
+(Paper~II, Section on the colour-swap audit).
+\end{remark}
 
 \paragraph{Boundaries, classes, layers.} A \emph{boundary} $b$ is a
 full public history ending at a procurement resolution. Boundaries

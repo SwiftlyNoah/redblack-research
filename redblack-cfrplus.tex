@@ -39,11 +39,11 @@
 \noindent
 Paper~I formalized heads-up Red/Black and showed that its reachable
 beliefs factorize over a class prior into two per-seat tilts. This paper
-solves, exactly, the abstraction $\gp$ that forgets the tilts: Red/Black
+solves the abstraction $\gp$ that forgets the tilts: Red/Black
 with beliefs reset to the class prior at every round boundary. The solve
 decomposes the game into $5{,}721$ subgame-bearing public classes, orders
 them by a layer index, and runs a vectorized form of CFR+ over each class
-against exactly-solved successors, to per-class exploitability tolerances
+against solved successors, to per-class exploitability tolerances
 of $10^{-5}$ to $10^{-4}$; the value of $\gp$ is $+0.0245$ to the opener,
 a $51.22\%$ win probability, and the solve runs in about two hours on a
 laptop. The second half measures what the abstraction costs, and returns
@@ -51,7 +51,16 @@ three results we did not anticipate. First, an earlier pass of the same
 computation converged by every internal meter while carrying values wrong
 by up to $0.11$, a hundred times its tolerance; the error was invisible
 to convergence checks by construction and was caught only by a
-seat-symmetry identity, which the solve of record now enforces exactly.
+seat-symmetry identity, which the solve of record then enforced exactly.
+A later audit (Section~\ref{sec:colourswap}) showed that enforcement
+hid rather than fixed the underlying indeterminacy: the colour-swap
+automorphism, which the solver never enforces, is violated by the same
+profile at the same magnitude, because CFR+ selects arbitrarily among
+equilibrium decompositions and the bootstrap composes that selection
+noise. A third-generation solve replaces the per-class selection with
+the unique equilibrium of an entropy-regularized game, annealed toward
+zero, and passes the colour-swap gate at solve precision on every
+class, with the regularization's cost stated rather than hidden.
 Second, the solved profile deliberately loses contests it could contest,
 flipping its own known off-color card with probability up to $0.97$ at
 some information sets; we prove this action is simultaneously optimal in
@@ -105,8 +114,12 @@ what it means, and three of its results surprised us.
         by up to $0.114$, a hundred times its tolerance. The error was
         invisible to round-local convergence checks by construction and
         was caught only by a seat-symmetry identity
-        (Section~\ref{sec:autopsy}), which the solve of record now
-        enforces exactly.
+        (Section~\ref{sec:autopsy}), which the second-generation solve
+        then enforced exactly. Enforcement blinded that meter, and the
+        colour-swap automorphism, which nothing enforces, later read
+        violations of the same magnitude on the enforced solve
+        (Section~\ref{sec:colourswap}); the third-generation solve
+        removes the cause instead of the symptom.
   \item The exactly solved profile plays, with probability up to $0.97$
         at some information sets, an action that flips its own known
         off-color card and loses a contest it could have contested. We
@@ -603,9 +616,13 @@ and scales the worst.
 A class and its seat-swapped image must have exactly opposite values under any
 correct solver: $v(\ell{=}0,A,B) = -v(\ell{=}1,B,A)$. Once classes bootstrap
 from other classes, mirror discrepancy becomes a cheap proxy for composition
-error, precisely the quantity $\varepsilon_{\text{round}}$ cannot see. It is the
-only internal instrument both scalable and sensitive to composition, which makes
-it the practical tripwire for a large run (Section~\ref{sec:autopsy}).
+error, precisely the quantity $\varepsilon_{\text{round}}$ cannot see. It is
+an internal instrument both scalable and sensitive to composition, which made
+it the practical tripwire for the first solve (Section~\ref{sec:autopsy}).
+The second-generation solve enforces the identity by reflection, which makes
+this meter read zero by construction; the colour-swap automorphism
+(Section~\ref{sec:colourswap}) is the surviving measured instrument of the
+same kind, and nothing in any solver generation enforces it.
 
 \subsection{Instruments for the real game}\label{sec:realmeters}
 
@@ -778,6 +795,111 @@ price is visible on any real-game instrument: LBR, raw and guarded arenas, and
 the bot battery all measure the three variants as identical
 (Section~\ref{sec:discussion}).
 
+\subsection{The colour-swap audit and the unique-selection re-solve}
+\label{sec:colourswap}
+
+Red/Black's deck holds exactly $26$ red and $26$ black cards and no rule
+distinguishes the colours, so exchanging red and black everywhere is an
+automorphism of the game and of $\gp$ (the class prior is
+colour-symmetric). It maps a class by swapping each seat's certain-red
+and certain-black bounds, and a private type $(r,x)$ of a seat with
+pre-discard hand size $n$ and $d$ discards to $(n-r,\,d-x)$. Because a
+two-player zero-sum game has a unique value, the value, the per-type
+conditional values, and (for any single equilibrium) nothing at all is
+forced about the per-type-pair decomposition; the value and conditionals
+must agree exactly between a class and its swapped image, whatever
+equilibrium a solver lands on. No solver generation enforces any of
+this, which makes it a meter in exactly the sense the enforced seat
+mirror no longer is.
+
+\begin{remark}[The audit, 2026-08]
+Measured on the second-generation solve of record
+(\texttt{scripts/check\_symmetry.py}, artifact
+\texttt{symmetry\_full.json}; all $2{,}971$ colour orbits), the
+invariant fails almost everywhere above the leaves: the per-cell
+decomposition $v_{\text{types}}$ diverges from its swapped image from
+layer $T'{=}3$ (worst $0.055$, rising to $1.67$ at $T'{=}8$), per-type
+conditional values diverge by up to $0.37$ ($T'{=}9$), and aggregate
+class values by up to $0.034$, against reported
+$\varepsilon_{\text{round}}$ of $10^{-5}$ to $10^{-4}$. The profile
+therefore does not determine the values of $\gp$ to better than about
+$0.03$, and its type-conditional advice not to better than about
+$0.37$, no matter what the round-local meters say. The cause is not a
+colour-dependent defect: re-solving violating orbit pairs against
+colour-symmetrised leaf values
+(\texttt{scripts/symmetry\_discriminate.py}) reproduces both members
+as exact images of each other to $10^{-16}$, while raw leaves
+differing by only $10^{-4}$ move cells by $0.14$ to $0.45$. CFR+ pins
+the aggregate value but selects arbitrarily among per-type-pair
+decompositions; the selection is seeded at swap-invariant classes
+(where one solve on exactly symmetric inputs still selects an
+asymmetric decomposition, measured at $4.2\times10^{-3}$) and the
+class-to-parent bootstrap then amplifies it, because the equilibrium
+correspondence is discontinuous in its leaf inputs. Enforcing the seat
+mirror in the second-generation solve removed one visible symptom of
+this indeterminacy and left the indeterminacy itself untouched, as the
+first-generation autopsy predicted enforcement would.
+\end{remark}
+
+The third-generation solve removes the freedom instead of a symptom.
+Each class is solved to the unique equilibrium of the
+entropy-regularized round game: per information set the policy follows
+a mirror-descent step
+$\ell \leftarrow (\ell + \eta\, q / c) / (1 + \eta\tau)$ on logits
+$\ell$, with $q$ the counterfactual action values, $c$ the row's fixed
+entry-prior mass, and the temperature $\tau$ annealed down a fixed
+geometric ladder from $0.3$ to $10^{-3}$, last iterate throughout
+(\texttt{scripts/v9\_solve.py}; the update is magnetic mirror descent
+with a uniform magnet under a reweighted dilated entropy, so the
+regularized equilibrium is unique for every $\tau>0$). Uniqueness makes
+the solution equivariant under every automorphism without enforcing
+any: the colour gate stays live, and the seat mirror could be measured
+again. The cost is stated rather than hidden: the exact best-response
+gap of the final policy is floored by $\tau$ (measured
+$4\times10^{-3}$ at $T'{=}4$ up to $0.19$ on the largest $T'{=}9$
+class, \texttt{scripts/qre\_calibrate.py}), while the value bias
+against the CFR+ value, which is unique and therefore ground truth for
+values, is $2.7\times10^{-4}$ to $7.8\times10^{-4}$ at
+$\tau_f=10^{-3}$ and scales linearly in $\tau_f$. Policies are full
+support everywhere, so the off-path uniform fallback of
+Section~\ref{sec:playing} no longer exists, and near-indifferent
+actions remain visibly mixed instead of being laundered into
+certainties. The re-solve is deterministic end to end; split across
+two machines, every one of the $2{,}288$ overlap-checked class values
+agreed bitwise.
+\begin{remark}[What the third generation bought, 2026-08]
+The re-solve completed on all $5{,}721$ classes. Measured on the
+colour swap, which nothing in either solver enforces, the worst
+disagreement anywhere between a class and its swapped image falls from
+$1.67$ to $3.5\times10^{-9}$ in the per-type-pair cells, from $0.37$ to
+$3.3\times10^{-10}$ in the type-conditional values, and from
+$3.4\times10^{-2}$ to $2.7\times10^{-11}$ in the class values. The
+second-generation profile violates the invariant on $2{,}206$ of
+$2{,}971$ colour orbits; the third violates it on none beyond a
+$10^{-9}$ threshold set tighter than the arithmetic.
+
+The strength cost is nil and the strength gain is also nil. Over
+$1{,}500$ mirrored pairs with play-time guards disabled and no
+fallbacks on either side, the two profiles are indistinguishable
+($0.4970$, $95\%$ CI $[0.479, 0.515]$, $p = 0.76$). A local
+best-response probe carrying beliefs to depth $9$, run on both
+profiles with identical deals, returns $\epsG \ge 0.0780$
+$[0.0160, 0.1394]$ for the second generation and $\epsG \ge 0.1220$
+$[0.0601, 0.1829]$ for the third; the difference is not significant
+($p = 0.32$) and separating a gap that size would require some
+$8{,}100$ games per arm. The honest statement is that unique selection
+buys determinacy and costs nothing measurable, not that it plays
+better.
+
+One negative result deserves recording because it settles a question
+three generations of the certificate program could not. Section~1's
+audit raised the possibility that the leaf-price dishonorability of
+$0.11$ to $0.26$ measured per resolve was largely the same defect as
+the colour inconsistency of $0.11$, rather than a limit of
+depth-limited resolving. Removing the inconsistency entirely does not
+lower the probe's edge. The limitation is intrinsic.
+\end{remark}
+
 \subsection{Playing the profile}\label{sec:playing}
 
 The solved profiles were mapped into the game engine and evaluated over mirrored
@@ -896,13 +1018,18 @@ oracle agreement where computable, mirror consistency, an explicit statement
 that the profile is an equilibrium of $\gp$ rather than of Red/Black, and the
 real-game instruments alongside.
 
-\paragraph{What is established, and what is not.} Established: $\gp$ is solved,
-exactly and reproducibly, with every internal meter green, the seat-mirror
-identity enforced by construction, and the oracle in agreement where it can see;
-and the distance from $\gp$ to $\game$ is measured, with
-$\overline{\mathrm{TV}}=0.842$, $\epsG\ge0.598$, and one on-path dominated
-action with its mechanism identified. Not established: any upper bound on
-$\epsG$, for this or any profile. Every real-game instrument in this paper
+\paragraph{What is established, and what is not.} Established: every class
+of $\gp$ is solved reproducibly to its stated round-local tolerance, the
+oracle agrees where it can see, and the distance from $\gp$ to $\game$ is
+measured, with $\overline{\mathrm{TV}}=0.842$, $\epsG\ge0.598$, and one
+on-path dominated action with its mechanism identified. The colour-swap
+audit (Section~\ref{sec:colourswap}) bounds what "solved" delivers for
+the second-generation profile: values of $\gp$ determined to about
+$0.03$ and type-conditional values to about $0.37$, because CFR+'s
+equilibrium selection composes as noise through the bootstrap. The
+third-generation unique-selection solve restores determinacy, with its
+regularization cost stated alongside. Not established: any upper bound
+on $\epsG$, for this or any profile. Every real-game instrument in this paper
 bounds from below.
 
 \paragraph{The handoff.} Re-solving boundaries under the exact posterior, the
