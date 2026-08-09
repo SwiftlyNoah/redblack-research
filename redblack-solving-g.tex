@@ -897,6 +897,31 @@ multiplayer, public-statistic enrichment (ruled out by Paper~II's
 refinement ladder), and further equilibrium-set selection (real-game
 noise, by Paper~II's measurements) are out of scope for this program.
 
+\begin{remark}[Paused, with a lower bound only, 2026-08]\label{rem:paused}
+Two measurements taken after this program paused settle how it stands.
+First, the hypothesis that the leaf-price dishonorability of
+Section~\ref{sec:results} was largely the incumbent store's colour
+inconsistency in disguise was refuted: against a re-solve whose values
+are colour-exact to $3.5\times10^{-9}$ where the incumbent is off by
+$1.67$ (Paper~II's third-generation solve), the resolver-aware probe's
+edge did not fall ($0.122\ [0.060,0.183]$ against the incumbent's
+$0.078\ [0.016,0.139]$, $p=0.32$, two-proportion test at $n=1000$ per
+arm; \code{probe\_resolver.py}, artifacts \code{probe\_v3.json} and
+\code{probe\_v10.json}). The dishonorability is therefore intrinsic to
+pricing depth-limited resolves from a stored belief-reset surface, and
+a better store cannot remove it. Second, the exact frontier surface
+that would replace those prices is infeasible above $T'\approx4$
+(Section~\ref{sec:results}). The statement of record follows: heads-up
+Red/Black ships with the measured lower bound
+$\epsG\ge0.078\ [0.016,0.139]$ under full belief carrying ($\ge0.598$
+for the stored profile) and with no certified upper bound below the
+trivial cap of $2$. This position is recorded deliberately, so that no
+reader infers an upper bound from the machinery's existence. The
+program resumes only if a new tool changes the cost of honest deep
+leaf prices; re-running it on a better store is now known to be
+pointless.
+\end{remark}
+
 \section{Conclusion}\label{sec:conclusion}
 
 This paper proved a composition theorem for safe re-solving in
