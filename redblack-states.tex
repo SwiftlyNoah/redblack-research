@@ -1702,7 +1702,30 @@ the true posterior rather than the prior, and pursuing a certified upper
 bound on real-game exploitability, with Corollary~\ref{cor:modelfree}
 supplying own-side conditionals that survive an arbitrarily wrong opponent
 model. The distance between the two programs is the measured gap of
-Section~\ref{sec:forgetsmeasured}.
+Section~\ref{sec:forgetsmeasured}. A standalone companion paper on solver
+coupling (in preparation) records where the two programs met: the coupled
+store \code{solve-6-cfrpolicy}, whose quantal-response values are held
+fixed while per-class CFR+ policies are re-solved against them. That
+store is the program's endpoint, the first that Paper~III's
+belief-carrying probe cannot beat: its real-game exploitability lower
+bound (the quantity $\epsilon_G$ of Papers~II and~III) reads
+$-0.005$ at $n=3{,}200$ games per arm (artifact
+\code{pool\_solve-6-cfrpolicy\_vs\_solve2.json}).
+
+\begin{remark}[Program endpoint, 2026-08]\label{rem:endpoint}
+The bound of record, measured by the probe of Paper~III
+(\code{probe\_resolver.py}, guards on, matched seeds): the coupled
+store \code{solve-6-cfrpolicy} reads
+$\epsilon_G \ge -0.005$ $[-0.040,\,+0.030]$ at $n=3{,}200$ games per
+arm, against the incumbent store's $+0.031$ $[-0.004,\,+0.065]$ at the
+same $n$ and seeds. The probe's win rate against it is
+indistinguishable from a coin flip, so the claim of record is
+non-inferiority; the artifact is
+\code{pool\_solve-6-cfrpolicy\_vs\_solve2.json}. The enumeration in
+this paper is untouched by any of this; the remark is here because the
+ladder of Section~\ref{sec:ladder} is the frame the endpoint is stated
+in (the probe carries rung-(iv) beliefs against a rung-(iii) store).
+\end{remark}
 
 % =========================================================================
 \section{Summary of Counts}\label{sec:summary}

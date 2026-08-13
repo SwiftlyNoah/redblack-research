@@ -1,3 +1,25 @@
+# SUPERSEDED (2026-08-13)
+
+This plan is superseded by the 2026-08-13 restructure. The repo's
+target shape is now **four documents**:
+
+- **Flagship** `redblack-coupling.tex` (in draft): the publication
+  target. Solver coupling - QRE-ladder values frozen, per-class CFR+
+  policies re-solved against them; the probe-zero verdict for
+  `solve-6-cfrpolicy` (eps_G >= -0.005 at n=3,200). Standalone, cites
+  the series as [RB-I/II/III], no cross-paper theorem numbers.
+- **Papers I-III** (revised): the expository series - I states and
+  counts, II solve and metrology, III resolving and certificates -
+  corrected to the solve-5/6 record and using solve names throughout.
+
+The restructure decisions are recorded in the game repo's
+`simulator/logs/solve-5-journal.md`; the live maintenance protocol is
+`AGENT_NOTES.md` (see its 2026-08-13 amendments). Everything below is
+kept unchanged as the audit record that motivated the 2026-08-04
+rewrite.
+
+---
+
 # Paper update plan (2026-08-03)
 
 > **EXECUTED 2026-08-04** as a full three-paper rewrite (going beyond

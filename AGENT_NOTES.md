@@ -106,3 +106,32 @@ When solver v7 work lands, update in this order:
   final (`results/solver/v6_frontier_t4*.json` + the merged
   `checkpoints/solver/v6/frontier/T4/`), a sentence with the final
   library count belongs in `sec:frontier`.
+
+## Amendments (2026-08-13 restructure)
+
+The repo is being restructured around a new flagship paper
+(`redblack-coupling.tex`, in draft) plus the revised three-paper
+series. Three rules are added; nothing above is rewritten (the
+v-numbers in the older sections are historical record and stay).
+
+1. **Solve names, never version numbers, in all new prose.** The
+   stores are named `solve-2-kernel`, `solve-4-qre-reach`,
+   `solve-5-pruned`, and `solve-6-cfrpolicy`. The old v-numbers
+   (v0-v10) collapsed solves, strategy profiles, and research
+   programs onto one counter and actively misled the work; the
+   mapping of record is the game repo's `docs/solver-history.md`.
+   New text in any `.tex` or `.md` here uses the solve names.
+   Existing dated remarks and this file's older sections keep their
+   original vocabulary as audit trail.
+2. **The flagship carve-out.** `redblack-coupling.tex` is standalone:
+   it carries its own preliminaries and cites the series as [RB-I],
+   [RB-II], [RB-III] bibliography references. It does NOT use
+   cross-paper hardcoded theorem numbers (house rule 4 above binds
+   Papers I-III only, and renumbering in the series must never
+   require touching the flagship). The lockstep-PDF rule (house
+   rule 3) and no-number-without-a-script (house rule 1) apply to it
+   in full.
+3. **`UPDATE_PLAN.md` is superseded.** Its 2026-08-03 audit drove the
+   2026-08-04 rewrite and is kept as audit trail; the 2026-08-13
+   header at its top records the new four-document structure. Do not
+   work from its item lists.
