@@ -725,6 +725,23 @@ the solved value to $1.4\times10^{-4}$ on every class small enough to
 bracket ($T'\le3$). For scale, the exactly known $T'=2$ endgame gives
 its opener $40651/78302\approx51.92\%$ (Paper~I, Rem.~10.5).
 
+\begin{remark}[Which root value, 2026-08]\label{rem:rootvalue}
+The $+0.02449$ above is the CFR+ value of this solve (the store
+\code{solve-2-kernel}) at its stated tolerance, and later solver
+generations bracket how far its digits should be trusted. The
+unique-selection annealed ladder of Section~\ref{sec:colourswap}
+(the store \code{solve-4-qre-reach}) prices the root at $0.018956$,
+a readout carrying the selection bias of its finite final temperature
+($\tau_f=3\times10^{-3}$); an unmasked control re-solve under the
+identical ladder with the value-based stopping rule of
+Section~\ref{sec:stoprule} prices it at $0.018602$, so the stopping
+rule's own effect at the root is $-3.5\times10^{-4}$
+(\code{scripts/qre\_solve.py} ladder readouts, recorded in the
+solve-5 journal). The value of $\gp$ is therefore determined by this
+program to about the third decimal, and no fourth-decimal claim
+should be read into any single solve's readout.
+\end{remark}
+
 \subsection{The first solve and its autopsy}\label{sec:autopsy}
 
 The first solve converged by every internal meter. All $5{,}721$ classes met
@@ -790,10 +807,47 @@ $+0.052$/game of $\gp$-composed exploitability, the measured price of refusing
 an action that is optimal in $\gp$ and dominated in $\game$. The tie-break
 selects, among value-equal actions, the one that reveals less; its purity costs
 $+0.047$/game, roughly $50\times$ the naive per-decision band intuition, because
-the band bounds the value shift, not the composed-best-response shift. Neither
-price is visible on any real-game instrument: LBR, raw and guarded arenas, and
-the bot battery all measure the three variants as identical
-(Section~\ref{sec:discussion}).
+the band bounds the value shift, not the composed-best-response shift. On the
+instruments available at the time of the solve (the LBR probe against the
+stored tables, raw and guarded arenas, and the bot battery), neither price was
+visible: all three variants measured as identical
+(Section~\ref{sec:discussion}). An earlier version of this passage promoted
+that reading to the claim that equilibrium-selection prices are invisible on
+every real-game instrument. A 2026-08 measurement refuted the claim.
+
+\begin{remark}[S5-0 refutation, 2026-08]\label{rem:s5refutation}
+Call \emph{play-time guards} the deployment rule that refuses weakly
+dominated actions (the suicide flip of Theorem~\ref{thm:suicide} and
+bids of impossible counts) at play time while leaving the solved
+tables untouched, and call the \emph{belief-carrying probe} Paper~III's
+instrument: the stored profile is deployed with each round re-solved
+under the exactly tracked public posterior, and the LBR probe of
+Definition~\ref{def:lbr}, holding a byte-exact shadow of that
+resolver, certifies a lower bound on $\epsG$ of the deployed agent.
+On that instrument the guards' price is visible and large. For the
+solve of record (the store \code{solve-2-kernel}), at $n=3{,}200$
+games per arm on matched seeds, the probe certifies
+$\epsG \ge +0.0919$ $[+0.0573,\,+0.1262]$ with guards off against
+$\epsG \ge +0.0306$ $[-0.0040,\,+0.0652]$ with guards on ($z=2.45$,
+$p=0.014$): the guards cut the probe's edge to a third. The
+unique-selection store \code{solve-4-qre-reach}
+(Section~\ref{sec:colourswap}) moves the same direction
+($0.1220 \to 0.0760$) without resolving at its $n=1{,}000$
+($z=1.03$, $p=0.30$) and is reported as such. Artifacts
+\code{s5\_probe\_solve2\_base*.json} and
+\code{s5\_probe\_solve2\_guards*.json}
+(\code{scripts/probe\_resolver.py}, pooled by
+\code{scripts/pool\_probe.py}). One caveat attaches to the magnitude
+rather than the sign: the guards-on probe best-responds against an
+unguarded opponent model, and since the guards prune only weakly
+dominated actions the sign is theory-safe. These pooled figures are
+the $\epsG$ numbers of record for the solve of record. The first
+$n=1{,}000$ batch of the chain reproduced the previously published
+$0.0780$ bound to four decimals before the extension was bought, and
+the batches differ only by seed range; the earlier figure was a
+faithful low-$n$ reading of the same quantity, and the pool extends
+its sample and adds the guards axis.
+\end{remark}
 
 \subsection{The colour-swap audit and the unique-selection re-solve}
 \label{sec:colourswap}
@@ -887,7 +941,11 @@ profiles with identical deals, returns $\epsG \ge 0.0780$
 $[0.0160, 0.1394]$ for the second generation and $\epsG \ge 0.1220$
 $[0.0601, 0.1829]$ for the third; the difference is not significant
 ($p = 0.32$) and separating a gap that size would require some
-$8{,}100$ games per arm. The honest statement is that unique selection
+$8{,}100$ games per arm. Both readings are guards-off at
+$n=1{,}000$; the pooled $n=3{,}200$ figures of
+Remark~\ref{rem:s5refutation}, which reproduce the $0.0780$ batch to
+four decimals within the guards-off pool, are the numbers of record.
+The honest statement is that unique selection
 buys determinacy and costs nothing measurable, not that it plays
 better.
 
@@ -899,6 +957,63 @@ the colour inconsistency of $0.11$, rather than a limit of
 depth-limited resolving. Removing the inconsistency entirely does not
 lower the probe's edge. The limitation is intrinsic.
 \end{remark}
+
+\subsection{The value-based stopping rule, and re-arming a meter}
+\label{sec:stoprule}
+
+The annealed ladder of Section~\ref{sec:colourswap} originally
+stopped each rung on a policy-movement criterion, and
+near-saturated policies keep moving long after the values have
+settled, so that criterion overpays. The fast variant of the ladder
+stops each rung on the value residual: a rung ends when the
+class's aggregate value stops moving at rung scale. The change cuts a
+production ladder about $30\times$, from $40{,}406$ iterations per
+class to about $1{,}300$.
+
+The rule was validated on the full policy-equivariance sweep rather
+than a pilot (artifact \code{deps\_value\_stoprule\_full.json},
+script \code{scripts/deps\_value\_stoprule.py}): all $360$
+sampled colour orbits re-solved under the identical production ladder
+with only the stopping rule changed. The meter is $d_\varepsilon$,
+the measured exploitability cost of a colour orbit's policy
+asymmetry, and an orbit is \emph{harmful} when
+$d_\varepsilon>10^{-2}$. The harmful tail falls from $22$ orbits to
+$6$ of the $346$ comparable, about $4\times$ fewer, while the worst
+magnitude is not reduced ($0.239$, at $T'{=}6$) and five previously
+clean orbits became divergent under the new rule. Overall solve
+quality is unchanged: taking the worse of each orbit's two twin
+solves by single-shot round exploitability, the median moves from
+$0.0030$ to $0.0030$ and the p95 from $0.0295$ to $0.0303$, at about
+$30\times$ less compute. The honest summary is a reduced problem
+rather than a solved one: saturated near-ties still select arbitrary
+plateaus per twin, so the colour-swap gate and the per-layer outlier
+flags below stay mandatory on any solve run under this rule.
+
+\paragraph{Re-arming a meter, as a worked example.} The solve
+pipeline flags a finished class-solve whose single-shot round
+exploitability exceeds a per-layer threshold (\code{EPS\_FLAG}); a
+separate warning threshold (\code{EPS\_WARN}) triggers an automatic
+retry at halved step size before a solve reaches any store. The flag
+table had been calibrated on the slow ladder, and the fast ladder's
+tail lands elsewhere, so the table was recalibrated before the first
+fast-ladder production solve
+(\code{scripts/recalibrate\_eps\_flags.py}, artifact
+\code{eps\_flag\_recalibration.json}). Two decisions
+carry the numbers. First, the per-layer p95 is taken over the
+censored sub-\code{EPS\_WARN} population: the validation sweep
+applies no retry ladder by design, so its raw distribution holds
+divergent single-shot solves ($1.91$ at $T'{=}5$) that production
+retries before any store holds them, and a raw p95 would set
+thresholds describing solves no store ever contains. Second, the
+layers the sweep does not reach ($T'{=}2,3$) were re-solved and
+measured directly rather than extrapolated from neighbours: $15$ of
+$36$ classes at $T'{=}2$ and $19$ of $132$ at $T'{=}3$ trip
+\code{EPS\_WARN} single-shot, so any extrapolation would have been
+badly wrong. The recalibration found the old table wrong in both
+directions, $5.3\times$ too tight at $T'{=}5$ and $3.3\times$ too
+loose at $T'{=}7$. A meter calibrated on one solver regime silently
+miscounts on another, in whichever direction that regime's tail
+happens to land.
 
 \subsection{Playing the profile}\label{sec:playing}
 
@@ -1001,6 +1116,100 @@ equilibrium, and two non-equilibria are not ordered by their distance
 to the $\gp$ solve; a gate of the form ``new solve beats old solve in
 games'' tests pairwise interaction plus sampling variance, not solution
 quality. The honest instruments are the composed meters and the probe.
+Remark~\ref{rem:arenablind3} records a third measured instance.
+\end{remark}
+
+\subsection{The masked solve: pruning the world model}
+\label{sec:maskedsolve}
+
+Theorem~\ref{thm:suicide} makes the suicide flip the sharpest known
+point of divergence between $\gp$ and $\game$, and
+Remark~\ref{rem:s5refutation} shows that refusing it at play time is
+worth a factor of three on the belief-carrying probe. One experiment
+remained: remove the action from the solved game itself, re-solving
+all of $\gp$ with the suicide flip masked out of every action set, so
+that no table, no policy, and no opponent model ever contains it. The
+experiment ran in 2026-08 as the store \code{solve-5-pruned}, and its
+verdict is the sharpest measurement this program has of what pruning
+is for.
+
+\paragraph{The mask binds across engines.} The mask was first
+verified to bind under the annealed-ladder engine of
+Section~\ref{sec:colourswap}, and the verification doubles as a
+cross-engine corroboration of Theorem~\ref{thm:suicide}: on the
+theorem's probe class the unmasked ladder plays the flip on path at
+$p=0.96$ where CFR+ played $0.97$, and masking it surrenders
+$0.0497$ of that class's value where the CFR+-era measurement was
+$0.0499$ (pinned by \code{tests/test\_solver\_dominance.py}). Two
+engines with different update rules price the artifact identically:
+the flip is genuinely $\gp$-optimal, and masking it is a real change
+to the solved game.
+
+\paragraph{The solve.} All $5{,}721$ classes were re-solved under the
+fast ladder of Section~\ref{sec:stoprule} with the mask on, and the
+mask was audited by read-back from the finished policies rather than
+trusted from the configuration: $2{,}209$ of $2{,}209$ canonical
+class-solves masked, $14{,}777{,}285$ rows locked, and the worst
+probability mass on any locked row exactly $0$ (append-only
+provenance in \code{solve-meta.jsonl}). The deployed resolves were
+masked the same way, and both probe arms below play with guards on
+and zero fallbacks, so the deployed strategy space is the masked one
+end to end.
+
+\paragraph{The verdict.} At $n=3{,}200$ games per arm on the matched
+seeds of Remark~\ref{rem:s5refutation}, the belief-carrying probe
+certifies
+$\epsG \ge +0.1256$ $[+0.0911,\,+0.1598]$ for \code{solve-5-pruned}
+against $\epsG \ge +0.0306$ $[-0.0040,\,+0.0652]$ for the guards-on
+incumbent \code{solve-2-kernel}, a difference of $z=3.81$,
+$p=0.00014$; the pooled artifact is
+\code{pool\_solve-5-pruned\_vs\_solve2.json}. Removing the dominated
+action at play time cut the probe's edge to a third; baking the same
+removal into the solved tables quadrupled it.
+
+\paragraph{Two mechanisms, decomposed.} The store a resolver carries
+is also its opponent model: the belief filter conditions on the
+opponent's observed actions by reading likelihoods from the same
+tables. A masked model assigns probability exactly zero to an
+observed suicide flip, and best responders play the flip (it is
+$\gp$-attractive, Theorem~\ref{thm:suicide}), so one observed flip
+breaks the filter and the game degrades to static tables for its
+remainder: $806$ of $3{,}200$ verdict games broke this way, against
+$0$ of $3{,}200$ in the benchmark arm. A diagnostic re-probe of the
+same store with the filter's opponent transfer replaced by its
+structural support indicator (Paper~III's break-proof mode, run here
+as primary) eliminated the channel entirely, $0$ broken games in
+$3{,}200$, and recovered about a quarter of the regression:
+$\epsG \ge +0.0931$ $[+0.0585,\,+0.1275]$, still decisively worse
+than the incumbent ($z=2.50$, $p=0.012$; artifact
+\code{pool\_solve-5-pruned-osf\_vs\_solve2.json}).
+About a quarter of the regression was therefore deployment blindness,
+and the remaining three quarters is intrinsic equilibrium distortion:
+the masked equilibrium prices every surrounding decision against an
+action set no real opponent is restricted to, and the whole strategy
+shifts with it, well beyond the removed action.
+
+The division of labor is now measured rather than argued. Pruning a
+weakly dominated action from own play is defense, and costs nothing
+an opponent can use; pruning it from the model of the world is
+blindness, and the store is both the play policy and that model.
+Guards belong at play time, and the solved game keeps the full action
+set. The store that succeeded the incumbent under exactly this
+division, \code{solve-6-cfrpolicy}, which couples
+\code{solve-4-qre-reach}'s values to per-class re-solved CFR+
+policies, is Paper~III's subject.
+
+\begin{remark}[Arena blindness, third instance, 2026-08]
+\label{rem:arenablind3}
+An arena between \code{solve-5-pruned} and \code{solve-2-kernel},
+$n=5{,}000$ games per mode, read a statistical tie: $0.5078$
+$[0.494,\,0.522]$, $p=0.28$ guards-off and $0.5094$, $p=0.19$
+guards-on (\code{eval\_solve-5-pruned\_vs\_solve2.json}), across a
+$4\times$ gap in probe-measured exploitability. This is the
+third measured instance of the blindness of
+Remark~\ref{rem:headtohead}, in its starkest form yet: an
+arena-based verdict would have shipped the pruned store as ``no
+regression'' while quadrupling real-game exploitability.
 \end{remark}
 
 \section{Discussion}\label{sec:discussion}
@@ -1008,7 +1217,9 @@ quality. The honest instruments are the composed meters and the probe.
 \paragraph{The two axes decouple.} The central empirical finding is that
 abstraction-internal quality and real-game quality are separate axes, decoupled
 in both directions: profile variants differing by $0.05$/game in
-$\gp$-exploitability measure identically on every real-game instrument, and the
+$\gp$-exploitability measured identically on every real-game instrument
+available at the time (the belief-carrying probe later separated the guarded
+and unguarded deployments; Remark~\ref{rem:s5refutation}), and the
 profile whose $\gp$ meters read $10^{-5}$ to $10^{-4}$ is exploitable for at
 least $0.598$ per game in $\game$. A report citing one axis without the other
 is, on this evidence, misleading regardless of which axis it picks. The
@@ -1035,7 +1246,10 @@ bounds from below.
 \paragraph{The handoff.} Re-solving boundaries under the exact posterior, the
 tilts this paper discards, cuts the probe's certified bound from $0.598$ to
 $0.363$ at a shallow depth gate, $0.183$ deeper, and $0.078$ with full
-carrying, a complete dose-response. But carrying beliefs soundly, and certifying
+carrying at $n=1{,}000$, a complete dose-response ($+0.0919$
+$[+0.0573,\,+0.1262]$ pooled to $n=3{,}200$, and $+0.0306$
+$[-0.0040,\,+0.0652]$ with play-time guards on, the deployed
+configuration; Remark~\ref{rem:s5refutation}). But carrying beliefs soundly, and certifying
 the result against all opponents rather than one probe family, is a different
 problem with different mathematics. That problem, its theorem, its instruments,
 and its current honest status are Paper~III.
