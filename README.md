@@ -1,85 +1,69 @@
-# The Red/Black Game - papers
+# Red/Black: solving a card game I couldn't look up
 
-Research writing on **Red/Black**, a hidden-information bidding game
-played over a shared 52-card deck in which only color matters. The
-repository holds **one publication-target paper and a three-paper
-expository series**: the flagship states the program's result, and
-Papers I-III are the self-contained account of the game, the solve, and
-the measurement machinery the result rests on. It is written for two
-audiences at once: a research audience (game abstraction, equilibrium
-computation, measuring what an abstraction costs) and a portfolio
-audience (recruiters and reviewers assessing the author's work end to
-end, from rules text to certified numbers). `RULES.md` is the canonical
-rule text every paper derives from.
+Red/Black is a bluffing game played with an ordinary 52-card deck where
+only color matters: bid how many cards of a color can be flipped,
+raise or challenge, then prove it. I built the game, then spent a
+summer trying to actually solve it - not "train a bot that seems
+strong," but pin down how far from optimal my best strategy is, with
+error bars I'd stake money on.
 
-| | |
+That turned out to be the hard part, and the interesting part. The
+game has about 2.4 x 10^33 information sets, so it can't be solved
+directly. Every path to an answer runs through an abstraction, and an
+abstraction can silently cost you exactly the thing you're trying to
+measure. Most of these papers are about refusing to let that happen.
+
+## The result
+
+The final strategy is one no best-response probe I can build knows how
+to beat: its measured exploitability lower bound in the real game is
+-0.005 [-0.040, +0.030] on a payoff range of 2, across 3,200 paired
+games (the predecessor measured +0.031 on identical seeds). It got
+there through a fact I find genuinely pretty: the two things a
+decomposed solver produces - subgame *values* and a playable *policy* -
+want properties no single algorithm supplies. Values need to be unique
+and symmetric so thousands of subgame solutions compose without
+selection noise; a quantal-response ladder gives that. Policies need
+sharpness; CFR+ gives that. So the values come from one solver, frozen,
+and the policies from the other, re-solved against them.
+
+The flagship paper also documents the experiment that failed first,
+because it changed how I think about what a strategy file *is*. I
+removed a provably-bad action from the solved game, expecting
+improvement. Exploitability quadrupled. A quarter of the damage:
+the strategy store doubles as the bot's model of its opponent, and a
+model that says an action is impossible breaks the moment a real
+opponent plays it. Pruning your own play is defense; pruning your
+model of the world is blindness.
+
+## The papers
+
+| paper | what it is |
 | --- | --- |
-| **Flagship** | Solver Coupling (`redblack-coupling.tex`, in draft; no committed PDF yet) |
-| **Paper I** | [Rules, Deterministic Dynamics, and Exact State Enumeration (Heads-Up)](redblack-states.pdf) - [source](redblack-states.tex) |
-| **Paper II** | [Solving the Belief-Reset Abstraction Exactly, and Measuring the Distance to the Real Game](redblack-cfrplus.pdf) - [source](redblack-cfrplus.tex) |
-| **Paper III** | [Belief Carrying, Safe Re-Solving, and the Certificate Problem](redblack-solving-g.pdf) - [source](redblack-solving-g.tex) |
+| [**Decoupled Equilibrium Selection**](redblack-coupling.pdf) | The flagship: the coupling result, the measurement that motivated it, and the pruning experiment as contrast. Standalone - start here. |
+| [Paper I - States and Counts](redblack-states.pdf) | The game formalized; exact enumeration of everything (the 10^33 is counted, not estimated). |
+| [Paper II - The Solve and the Meters](redblack-cfrplus.pdf) | Solving the abstraction exactly, and the measurement discipline: every instrument defined before it's trusted, including the ones that turned out to be blind. |
+| [Paper III - Playing the Real Game](redblack-solving-g.pdf) | Carrying beliefs across the abstraction's seams, safe re-solving, and an honest negative: why a certified upper bound stays out of reach. |
 
-**Flagship.** The result paper and intended publication target. Values
-are taken from an annealed-QRE ladder (unique, colour-equivariant,
-continuous in its inputs) and held fixed, while per-class CFR+ policies
-are re-solved against those frozen prices, so each method contributes
-the property it is good for. The resulting store, `solve-6-cfrpolicy`,
-is the first the belief-carrying probe cannot beat: eps_G >= -0.005
-[-0.040, +0.030] at n=3,200 games per arm on matched seeds (artifact
-`pool_solve-6-cfrpolicy_vs_solve2.json`), against the guards-on
-incumbent's +0.031. Standalone, with its own preliminaries; it cites
-the series as [RB-I], [RB-II], [RB-III].
+`RULES.md` is the canonical rule text everything derives from.
 
-**Paper I.** A complete formal account of heads-up Red/Black as a
-deterministic, acyclic finite transition system, organized around a
-four-rung ladder of state notions: the Markov dynamics state; the true
-game state of G (5.3e34 public decision histories, exactly 2.448e33
-perfect-recall infosets at hand size 5, brute-force validated at small
-hand sizes); the public class (6,051 classes, 5,485 reachable); and the
-rank-one belief bridge, under which every reachable posterior
-factorizes over the class prior into two per-seat tilts. The class and
-the tilts are the objects the later papers run on.
+## If you're skimming
 
-**Paper II.** Builds CFR+ from the definition of regret for a reader
-who has never seen it, then solves the belief-reset abstraction G'
-exactly by cutting the game at Paper I's boundaries and bootstrapping
-values through a layered DAG of 5,721 public classes; the value of
-record is 51.22% to the opening seat. The second half measures the
-distance to the real game: reach-weighted TV 0.842, certified
-exploitability >= 0.598/game for a profile whose in-abstraction meters
-read 1e-4, and an action the abstraction's equilibrium plays on path
-with probability 0.97 that is dominated in the real game.
+Read the flagship's introduction and Section 7 (the pruning
+experiment). If you want a feel for how the sausage gets measured,
+Paper II's remarks - dated, never deleted - are a lab notebook of every
+instrument that fooled me and what replaced it. Head-to-head win rate
+between two bots turns out to say almost nothing about how exploitable
+either one is; that's measured three separate times in here.
 
-**Paper III.** The upper-bound program, reported honestly: re-solving
-each boundary under the exact posterior closes most of the certified
-gap (0.598 -> 0.078), but naive re-solving admits adversarial
-counterexamples, so the paper builds the certification machinery (a
-safe-resolving gadget with live-measured margins and an
-opponent-model-free composition theorem). Its dated closing remarks
-record the audited status: a lower bound only, the upper jaw trivial,
-and the probe-zero endpoint reached by the flagship's coupled store.
+## House rule
 
-## Reproducing the counts
+No number without a script. Every numeral in these papers is
+regenerated by code in this repo (`state_counts.py`,
+`real_game_size.py`, `verify_against_engine.py`) or by the solver
+scripts in the game repo, whose JSON artifacts are committed alongside.
+If a claim can't be recomputed, it isn't in the papers.
 
-`state_counts.py` (pure standard library) re-derives every table in
-Paper I from `RULES.md`; `verify_against_engine.py` cross-checks it
-against the game's engine; `real_game_size.py` counts the real game's
-perfect-recall history tree. **No number without a script**: every
-numeral in the papers is regenerated by one of these or by the solver
-scripts in the game repo, and the text names its script.
-
-## Building the papers
-
-Self-contained TikZ/pgfplots, mainstream packages only:
-
-```bash
-tectonic -X compile redblack-states.tex --outdir .
-tectonic -X compile redblack-cfrplus.tex --outdir .
-tectonic -X compile redblack-solving-g.tex --outdir .
-```
-
-(`redblack-coupling.tex` builds the same way once its draft lands.)
-
-## Author
-
-Noah Brauner - [github.com/SwiftlyNoah](https://github.com/SwiftlyNoah)
+PDFs build with [tectonic](https://tectonic-typesetting.github.io):
+`tectonic -X compile <paper>.tex --outdir .` - committed PDFs never lag
+their sources.
