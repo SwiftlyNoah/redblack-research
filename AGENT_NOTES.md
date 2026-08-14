@@ -116,13 +116,27 @@ v-numbers in the older sections are historical record and stay).
 
 1. **Solve names, never version numbers, in all new prose.** The
    stores are named `solve-2-kernel`, `solve-4-qre-reach`,
-   `solve-5-pruned`, and `solve-6-cfrpolicy`. The old v-numbers
+   `solve-5-pruned`, and `profile-cfrpolicy`. The old v-numbers
    (v0-v10) collapsed solves, strategy profiles, and research
    programs onto one counter and actively misled the work; the
    mapping of record is the game repo's `docs/solver-history.md`.
    New text in any `.tex` or `.md` here uses the solve names.
    Existing dated remarks and this file's older sections keep their
    original vocabulary as audit trail.
+
+   **`solve-6-cfrpolicy` was renamed to `profile-cfrpolicy` on
+   2026-08-14** (it is a profile, not a solve: its values are
+   byte-identical to solve-4's). The four `.tex` files were
+   deliberately NOT rewritten. Roughly half their occurrences are
+   artifact filenames - `probe_solve-6-cfrpolicy_a.json`,
+   `pool_solve-6-cfrpolicy_vs_solve2_full.json` - which are frozen
+   because the papers cite them, and a paper that calls the store
+   `profile-cfrpolicy` while citing `probe_solve-6-*.json` is less
+   coherent than one that uses the name its artifacts carry. Papers
+   are dated documents; they keep the name in force when they were
+   measured. If you write NEW paper prose about this store, use
+   `profile-cfrpolicy` and say once that the artifacts predate the
+   rename.
 2. **The flagship carve-out.** `redblack-coupling.tex` is standalone:
    it carries its own preliminaries and cites the series as [RB-I],
    [RB-II], [RB-III] bibliography references. It does NOT use
