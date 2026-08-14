@@ -1709,19 +1709,19 @@ fixed while per-class CFR+ policies are re-solved against them. That
 store is the program's endpoint, the first that Paper~III's
 belief-carrying probe cannot beat: its real-game exploitability lower
 bound (the quantity $\epsilon_G$ of Papers~II and~III) reads
-$-0.005$ at $n=3{,}200$ games per arm (artifact
-\code{pool\_solve-6-cfrpolicy\_vs\_solve2.json}).
+$-0.025$ at $n=10{,}000$ games per arm (artifact
+\code{pool\_solve-6-cfrpolicy\_vs\_solve2\_full.json}).
 
 \begin{remark}[Program endpoint, 2026-08]\label{rem:endpoint}
 The bound of record, measured by the probe of Paper~III
 (\code{probe\_resolver.py}, guards on, matched seeds): the coupled
 store \code{solve-6-cfrpolicy} reads
-$\epsilon_G \ge -0.005$ $[-0.040,\,+0.030]$ at $n=3{,}200$ games per
-arm, against the incumbent store's $+0.031$ $[-0.004,\,+0.065]$ at the
-same $n$ and seeds. The probe's win rate against it is
-indistinguishable from a coin flip, so the claim of record is
-non-inferiority; the artifact is
-\code{pool\_solve-6-cfrpolicy\_vs\_solve2.json}. The enumeration in
+$\epsilon_G \ge -0.025$ $[-0.044,\,-0.005]$ at $n=10{,}000$ games per
+arm, against the incumbent store's $+0.034$ $[+0.015,\,+0.054]$ at the
+same $n$ and seeds. The probe loses to it, so the bound is negative and
+therefore vacuous as a bound; what the measurement supports is the
+comparison, which resolves at $p=3.0\times10^{-5}$. The artifact is
+\code{pool\_solve-6-cfrpolicy\_vs\_solve2\_full.json}. The enumeration in
 this paper is untouched by any of this; the remark is here because the
 ladder of Section~\ref{sec:ladder} is the frame the endpoint is stated
 in (the probe carries rung-(iv) beliefs against a rung-(iii) store).

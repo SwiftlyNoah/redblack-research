@@ -57,10 +57,14 @@ the sharp baseline it was meant to replace). We couple the two: every
 subgame is re-solved with CFR+ against the quantal-response values held
 byte-identically fixed, and the values are deployed unchanged while
 only the policies are replaced. The coupled profile is the first in this program's
-history that the probe cannot beat, with a lower bound of $-0.0050$
-$[-0.0396, +0.0296]$ at $3{,}200$ paired games against the incumbent's
-$+0.0306$ $[-0.0040, +0.0652]$; the claim of record is non-inferiority,
-with a pre-registered extension in flight for anything stronger. A
+history that the probe cannot beat, and at $10{,}000$ paired games per
+arm the probe loses to it: the reading is $-0.0248$ $[-0.0444,
+-0.0052]$ against the incumbent's $+0.0342$ $[+0.0146, +0.0538]$,
+a difference of $-0.0590$ at $p=3.0\times10^{-5}$, with the same
+direction and significance on the $6{,}800$ fresh games that took no
+part in selecting the candidate. A negative lower bound is vacuous as a
+bound, so the claim it supports is comparative, and what it says about
+the probe is that this instrument has bottomed out. A
 contrast experiment locates where the surgery must not happen: baking a
 real-game-motivated pruning of a dominated action into the solved game
 quadruples the probe bound ($+0.1256$, $p=1.4\times10^{-4}$), and a
@@ -139,9 +143,11 @@ Contributions:
         as an explicit invariant and the policy store as the only
         replaced artifact (Section~\ref{sec:coupling}).
   \item \textbf{The probe-zero result.} The coupled profile is the first
-        the belief-carrying probe cannot beat: $\epsG \ge -0.0050$
-        $[-0.0396,+0.0296]$ at $n=3{,}200$ paired games, non-inferior to
-        the incumbent decisively (Section~\ref{sec:verdict}).
+        the belief-carrying probe cannot beat. At $n=10{,}000$ paired
+        games the probe loses to it, $\epsG \ge -0.0248$
+        $[-0.0444,-0.0052]$, and the comparison against the incumbent
+        resolves at $p=3.0\times10^{-5}$
+        (Section~\ref{sec:verdict}).
   \item \textbf{A pruning pathology with a mechanism decomposition.}
         Masking a dominated action in the solved game quadruples the
         probe bound; a support-filter diagnostic attributes about a
@@ -157,10 +163,10 @@ Contributions:
 
 Throughout, the claims are disciplined by a pre-registered distinction:
 a screen at $3{,}200$ games per arm can support non-inferiority only,
-and any improvement claim requires a $10{,}000$-games-per-arm extension.
-The headline results of this paper are the probe-zero reading and
-decisive non-inferiority; the extension is in flight and its slot is
-marked where it belongs (Section~\ref{sec:verdict}).
+and any improvement claim requires a $10{,}000$-games-per-arm
+extension. Both were run, in that order, and the screen's favorable but
+unresolved reading ($p=0.154$) was published as non-inferiority until
+the extension resolved it (Section~\ref{sec:verdict}).
 
 \section{The game and its abstraction}\label{sec:game}
 
@@ -490,46 +496,83 @@ one 10-core Apple M-series machine with 32~GB of memory
 
 \section{Verdict}\label{sec:verdict}
 
-Table~\ref{tab:verdict} is the screen of record, at the benchmark's
-exact seeds, paired deals, and mirrored seatings; both arms ran with
-zero resolver breaks and zero fallbacks.
+Table~\ref{tab:verdict} is the verdict of record, at the benchmark's
+exact seeds, paired deals, and mirrored seatings. Every contributing
+run logged zero resolver breaks and zero fallbacks.
 
 \begin{table}[ht]
 \centering\small
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-arm & probe wr & $\epsG$ lower bound \\
+arm & stage & probe wr & $\epsG$ lower bound \\
 \midrule
-solve-6-cfrpolicy (coupled) & $0.4975$ &
-  $\mathbf{-0.0050}$ $[-0.0396, +0.0296]$ \\
-solve-2, guards on (incumbent) & $0.5153$ &
+solve-6-cfrpolicy (coupled) & screen & $0.4975$ &
+  $-0.0050$ $[-0.0396, +0.0296]$ \\
+solve-2, guards on (incumbent) & screen & $0.5153$ &
   $+0.0306$ $[-0.0040, +0.0652]$ \\
+\addlinespace
+solve-6-cfrpolicy (coupled) & extension & $0.4829$ &
+  $-0.0341$ $[-0.0578, -0.0104]$ \\
+solve-2, guards on (incumbent) & extension & $0.5179$ &
+  $+0.0359$ $[+0.0121, +0.0596]$ \\
+\addlinespace
+solve-6-cfrpolicy (coupled) & pooled & $0.4876$ &
+  $\mathbf{-0.0248}$ $[-0.0444, -0.0052]$ \\
+solve-2, guards on (incumbent) & pooled & $0.5171$ &
+  $+0.0342$ $[+0.0146, +0.0538]$ \\
 \bottomrule
 \end{tabular}
-\caption{The screen, $n=3{,}200$ games per arm, seeds \code{pvr}
-$0$--$1599$, paired. Artifacts
-\code{probe\_solve-6-cfrpolicy\_a.json}/\code{\_b.json}, pooled in
-\code{pool\_solve-6-cfrpolicy\_vs\_solve2.json};
-benchmark \code{s5\_probe\_solve2\_guards.json} and \code{\_ext.json}.}
+\caption{\sloppy Screen ($n=3{,}200$ per arm, seeds \code{pvr} $0$--$1599$),
+pre-registered extension ($n=6{,}800$, fresh seeds \code{pvr}
+$1600$--$4999$), and the two pooled ($n=10{,}000$, seeds
+$0$--$4999$). All paired. Artifacts
+\code{probe\_solve-6-cfrpolicy\_a.json}/\code{\_b.json} and
+\code{\_ext\_a.json}/\code{\_ext\_b.json}; benchmark
+\code{s5\_probe\_solve2\_guards.json}, \code{\_ext.json} and
+\code{\_ext2.json}. Pooling is by \code{pool\_probe.py}, whose two
+artifacts are named in Section~\ref{sec:repro}.}
 \label{tab:verdict}
 \end{table}
 
 The coupled profile is the first in this program's history whose
-belief-carrying probe cannot beat it: the probe's win rate is
-indistinguishable from a coin flip, and the lower bound sits at zero.
-The difference against the incumbent is $-0.0356$, $z=-1.43$,
-$p=0.154$: favorable in direction and unresolved at screen size,
-exactly as the pre-registration of Section~\ref{sec:screens} predicts a
-true difference of this magnitude would be. The claim of record is
-therefore \emph{non-inferiority}, which the screen supports decisively,
-plus the probe-zero reading itself. The pre-registered extension
-(fresh seeds \code{pvr} $1600$--$4999$, $3{,}400$ pairs per arm, which
-pooled with the screens reaches $\approx10{,}000$ games per arm and
-$\approx80\%$ power for the observed difference) is in flight;
-artifacts \code{probe\_solve-6-cfrpolicy\_ext.json} and
-\code{s5\_probe\_solve2\_guards\_ext2.json}.
-\todo{extension: insert the pooled extension verdict here when it
-lands; until then no sentence in this paper claims improvement}
+belief-carrying probe cannot beat it. At screen size the probe's win
+rate was indistinguishable from a coin flip and the difference against
+the incumbent was $-0.0356$, $z=-1.43$, $p=0.154$, favorable in
+direction and unresolved, exactly as the pre-registration of
+Section~\ref{sec:screens} predicts for a true difference of this
+magnitude. The extension resolves it. Pooled at $10{,}000$ games per
+arm the difference is $-0.0590$, $z=-4.17$, $p=3.0\times10^{-5}$, and
+the claim of record moves from non-inferiority to improvement.
+
+The extension alone carries that claim, which matters because the
+screen selected this candidate and screening several candidates then
+extending the best is a selection procedure. On the $6{,}800$ fresh
+games that took no part in the selection, the difference is $-0.0700$,
+$z=-4.08$, $p=4.5\times10^{-5}$, slightly larger than the pooled
+figure. Nothing here depends on reusing the screen.
+
+The sign carries the more interesting reading. The probe does not
+merely fail to beat the coupled profile, it loses to it, $0.4876$
+against a fair $0.5$ ($p=0.014$ pooled, $p=0.005$ on the fresh games).
+A negative lower bound is vacuous, since $\epsG \ge 0$ holds by
+definition, so the honest statement of the absolute result is that the
+belief-carrying probe yields no positive lower bound on this profile's
+exploitability at $n=10{,}000$. That is a fact about the instrument
+rather than a proof of near-optimality, and it is the sense in which
+this program now lacks a probe strong enough to price its own best
+profile. The instrument is otherwise healthy: the same probe at the
+same seeds with the same guards reads $+0.0342$ with a confidence
+interval clear of zero against the incumbent, which is what makes the
+comparative claim well posed even though the absolute one is not.
+
+Because the two arms were measured on different machines, both stores
+were fingerprinted file by file on each before pooling. The coupled
+store is bit-identical across machines, and the incumbent's differs
+only in a Finder metadata file and in ablation directories no probe
+reads. \code{pool\_probe.py} compares the runs' configuration keys but
+not the stores' contents, and the \code{store} field it carries is a
+filesystem path, so this check is external to the tooling by
+construction.
 
 The arena control is consistent with non-regression and decides nothing
 further: against the incumbent, $0.5096$ $[0.496,0.523]$, $p=0.18$
@@ -724,6 +767,11 @@ of $0.11$--$0.26$ per re-solve is intrinsic to depth-limited resolving
 from any stored belief-reset surface, and no upper bound below the
 trivial $2.0$ is claimed. Probe-zero therefore means the instrument
 cannot beat the profile, and does not mean the profile is unbeatable.
+The coupled profile has now passed the point where this instrument
+says anything absolute about it at all: the bound it returns is
+negative, hence vacuous, and only the comparison against a profile the
+probe can still beat remains informative. Pricing the coupled profile
+absolutely requires a stronger probe, and building one is open.
 
 \emph{Temperature bias in the values.} The deployed values are the QRE
 ladder's at $\tau_f=3\times10^{-3}$, and carry its bias: the root value
@@ -749,9 +797,12 @@ Game counts regenerate from \path{real_game_size.py} and
 the scripts under \path{simulator/scripts/} in the game repository
 (\path{qre_solve.py}, \path{policy_pass.py}, \path{check_symmetry.py},
 \path{check_policy_symmetry.py}, \path{tripwires.py},
-\path{probe_resolver.py}), whose JSON artifacts live under
+\path{probe_resolver.py}, \path{pool_probe.py}), whose JSON artifacts live under
 \path{simulator/results/solver/} with the store name in the filename
-(\path{probe_solve-6-cfrpolicy_*.json}, \path{pool_*.json},
+(\path{probe_solve-6-cfrpolicy_*.json}, the verdict's two pooled
+artifacts
+\path{pool_solve-6-cfrpolicy_vs_solve2_full.json} and
+\path{pool_solve-6-cfrpolicy_vs_solve2_extonly.json},
 \path{policy_symmetry_*.json}, \path{tripwires_*.json}, and
 \path{eval_*.json}). Probe seed sets are
 named in every artifact (\code{pvr} ranges), deals and decision seeds

@@ -16,9 +16,12 @@ measure. Most of these papers are about refusing to let that happen.
 ## The result
 
 The final strategy is one no best-response probe I can build knows how
-to beat: its measured exploitability lower bound in the real game is
--0.005 [-0.040, +0.030] on a payoff range of 2, across 3,200 paired
-games (the predecessor measured +0.031 on identical seeds). It got
+to beat. Across 10,000 paired games the probe actually loses to it, so
+the exploitability lower bound it returns is negative, -0.025 [-0.044,
+-0.005] on a payoff range of 2, which is a statement about the probe
+running out of room rather than a proof the strategy is unbeatable. The
+predecessor, on identical seeds, measured +0.034: the difference
+resolves at p = 3e-5. It got
 there through a fact I find genuinely pretty: the two things a
 decomposed solver produces - subgame *values* and a playable *policy* -
 want properties no single algorithm supplies. Values need to be unique
