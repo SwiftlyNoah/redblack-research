@@ -1,5 +1,8 @@
 # Red/Black: solving a card game I couldn't look up
 
+Start here if you are reading the papers rather than maintaining them; the
+maintenance protocol is `AGENT_NOTES.md`.
+
 Red/Black is a bluffing game played with an ordinary 52-card deck where
 only color matters: bid how many cards of a color can be flipped,
 raise or challenge, then prove it. I built the game, then spent a
@@ -21,8 +24,9 @@ the exploitability lower bound it returns is negative, -0.025 [-0.044,
 -0.005] on a payoff range of 2, which is a statement about the probe
 running out of room rather than a proof the strategy is unbeatable. The
 predecessor, on identical seeds, measured +0.034: the difference
-resolves at p = 3e-5. It got
-there through a fact I find genuinely pretty: the two things a
+resolves at p = 3e-5.
+
+It got there through a fact I find genuinely pretty: the two things a
 decomposed solver produces - subgame *values* and a playable *policy* -
 want properties no single algorithm supplies. Values need to be unique
 and symmetric so thousands of subgame solutions compose without

@@ -1,8 +1,15 @@
 # Notes to the next agent (paper maintenance)
 
-Written 2026-08-04 at the close of the three-paper rewrite; amended the
-same day after the operator-directed RESTRUCTURE (second pass). Read
-this before touching any `.tex` here.
+Read this before touching any `.tex` here. It is the live maintenance
+protocol: the prose style sheet, the house rules, the measured figures of
+record, and what is provisional in each paper.
+
+The repo holds **four documents**: the flagship `redblack-coupling.tex` (the
+publication target - solver coupling, with QRE-ladder values frozen and
+per-class CFR+ policies re-solved against them) plus the revised three-paper
+series - Paper I states and counts, Paper II solve and metrology, Paper III
+resolving and certificates. The restructure decisions behind that shape are
+recorded in the game repo's `simulator/logs/solve-5-journal.md`.
 
 ## Style sheet (2026-08-04 restructure; mandatory for all new prose)
 
@@ -19,7 +26,7 @@ this before touching any `.tex` here.
   (e.g. Paper III's Remark "A rejected certificate" keeps the full
   1.958 story).
 - Definitions strictly before use; every paper defines or explicitly
-  imports each symbol it uses (Paper III now has its own Preliminaries
+  imports each symbol it uses (Paper III has its own Preliminaries
   with TV, eps_G, the probe family, CBV).
 - Paper I's organizing spine is the four-rung state ladder (Sec. 3);
   new Paper I content should name its rung. G' is formally Paper I
@@ -31,6 +38,24 @@ this before touching any `.tex` here.
 - The "52.83% four-card root" figure was removed from Paper II
   (2026-08-04): no script generates it and Paper I never contained it.
   Do not reintroduce it without a script.
+- **Solve names, never version numbers, in all new prose.** The stores are
+  named `solve-2-kernel`, `solve-4-qre-reach`, `solve-5-pruned` and
+  `profile-cfrpolicy`. The old v-numbers (v0-v10) collapsed solves, strategy
+  profiles and research programs onto one counter and actively misled the
+  work; the mapping of record is the game repo's `docs/solver/history.md`.
+  New text in any `.tex` or `.md` here uses the solve names. Existing dated
+  remarks and this file's older sections keep their original vocabulary as
+  audit trail.
+- **`solve-6-cfrpolicy` was renamed to `profile-cfrpolicy` on 2026-08-14**
+  (it is a profile, not a solve: its values are byte-identical to solve-4's).
+  The four `.tex` files were deliberately NOT rewritten. Roughly half their
+  occurrences are artifact filenames - `probe_solve-6-cfrpolicy_a.json`,
+  `pool_solve-6-cfrpolicy_vs_solve2_full.json` - which are frozen because the
+  papers cite them, and a paper that calls the store `profile-cfrpolicy`
+  while citing `probe_solve-6-*.json` is less coherent than one that uses the
+  name its artifacts carry. Papers are dated documents; they keep the name in
+  force when they were measured. NEW paper prose about this store uses
+  `profile-cfrpolicy` and says once that the artifacts predate the rename.
 
 The papers' house rules:
 
@@ -49,7 +74,91 @@ The papers' house rules:
 4. **Cross-paper references are hardcoded numbers** (e.g. Paper II
    cites "Paper I, Thm. 11.1"). If you renumber anything in Paper I,
    grep the other two papers for `Thm.~` and `Theorem~` and re-verify
-   against the fresh `.aux` file.
+   against the fresh `.aux` file. This rule binds Papers I-III only.
+5. **The flagship is a standalone carve-out.** `redblack-coupling.tex`
+   carries its own preliminaries and cites the series as [RB-I], [RB-II],
+   [RB-III] bibliography references. It does NOT use cross-paper hardcoded
+   theorem numbers, so renumbering in the series must never require touching
+   it. Rules 1 and 3 apply to it in full.
+
+After any count-bearing edit here, run `state_counts.py` and
+`verify_against_engine.py` (31 cross-checks; non-zero exit on any mismatch)
+against the parent repo's simulator. `verify_against_engine.py`,
+`real_game_size.py` and `data/layer-t2.csv` live in this repo, synced
+2026-08-03 from the parent repo that consumes it as a submodule.
+
+`state_counts.py` counts the CLASS abstraction; `real_game_size.py` counts the
+perfect-recall public history tree of the REAL game G (order-sensitive flips,
+full bid chains, loser-dependent round composition) - the object any exact
+solver of G must index. They are different counts and must not be conflated.
+
+## Measured figures of record
+
+The numbers the papers are corrected against, each with the date it was
+measured. Do not restate an older figure from git history over one of these.
+
+- **Root value (v3 re-solve, 2026-07):** +0.02449 (51.22%), NOT the v2 solve's
+  +0.0266 (51.33%). v3 reached tol 1e-5..1e-4 in 2h02m on a laptop via
+  ordering collapse, mirror reflection (residual 1.5e-6..8.9e-6, against v2
+  gaps up to 0.114) and the JIT kernel; v2 was a 12.1 h / $23 cloud run.
+- **Equilibrium multiplicity (2026-07):** cellwise `v_types` spread of up to
+  6.7e-2 between a solve and its reflection is equilibrium SELECTION, not
+  error - only prior-weighted aggregates are pinned.
+- **G' vs real-game exploitability (2026-07):** kernel best response gives
+  eps_lb 0.4533/game for v3/v4-base in G', while the LBR probe (exact
+  opponent-type posterior plus posterior-contracted argmax) certifies
+  eps_G >= 0.598 for the stored profile. Every G'-selection variant measures
+  identically in real play.
+- **Head-to-head is not a solve meter (2026-07):** v3 converged about 100x
+  tighter and still "lost" a raw arena that 216,000 games later proved a dead
+  tie, from seed-family luck plus pair-correlated p-values.
+- **The belief reset, measured (2026-07):** reach-weighted
+  TV(mu_h, lambda_kappa) = 0.842 overall, monotone 0.66 -> 0.95 with depth.
+  The true class-conditional posterior closes only ~17pp of an 84pp gap, and
+  public-statistic enrichment is dead because the leak is WITHIN class. The G'
+  equilibrium plays a real-game-dominated action (the suicide flip) on path
+  with p = 0.97, because the reset launders the self-reveal.
+- **Equilibrium-selection prices (2026-07), both invisible to every real-game
+  instrument:** dominance pruning (masked solve) costs -5.2e-4 G' root value
+  with suicide rate 0 but is +0.052/game more exploitable to an unmasked G'
+  BR; concealment tie-breaking (the ship profile) carries a +0.047/game G' eps
+  price.
+- **Deployed profile battery (v4-tb, 2026-07):** 79.97-81.55% vs gen6, ~87% vs
+  heuristic, self-play seat-0 rate consistent with the solved root. Guards-on
+  parity is a FLOOR, not a finding.
+- **Full belief carrying (v5 window, 2026-08):** closes essentially the entire
+  certified gap, 0.598 -> 0.078 [0.016, 0.139] - to this instrument the reset
+  is not merely the dominant term but the whole of it. Beliefs pay in
+  DEFENCE, not offence (head-to-head gain about 0).
+- **Two instrument traps worth an appendix:** the `eps_lb`-is-a-lower-bound
+  trap (an apparently negative eps), and the per-state/per-row aliasing bug
+  that VOIDED all pre-fix composed-eps figures. Meters need gates too.
+- **Fixed promise surfaces are certifiably dead (v6 window, 2026-08-03):**
+  per-type dishonor of a FIXED promise surface is linear-fractional in the own
+  factor, so its sup over the rank-1 family certifies at own-type vertices.
+  Measured sup dishonor of the functional surface is median ~1.0 and max ~2.0
+  at both T'=2 and T'=3, so fixed promise matrices are dead at every layer
+  even where on-path margins measure 3e-4. The certified path is
+  range-dependent promises (library caps at the realized range) plus per-type
+  enforcement.
+- **Per-type enforcement is mandatory machinery, not an optimization
+  (2026-08-03):** honorable promises push opponent mass out, so CFR's weighted
+  objective ignores opted-out types, and hybrid (tighter) promises measured
+  actively HARMFUL without enforcement (T'=3 margin 0.634 vs 0.085).
+- **The v6 closing sandwich (2026-08-03):** probe lower bounds 0.078 (unsafe
+  full carry, n=1000), 0.160 (safe, stored promises) and 0.113 (safe,
+  certified promises), against a trivial upper bound. The certificate is
+  measured, complete and fat, and the distance is entirely honorability of the
+  price surface at T'>=4.
+- **Exact belief factorization (2026-08):** reachable beliefs factorize EXACTLY
+  as prior x g0(t0) x g1(t1) because a = r + x is invariant along every
+  transition - measured residual 3.3e-16 over 17,140 boundaries. This is a
+  structural fact about the game's information partition, not an
+  approximation.
+
+Standing convention for the resolving work: every constant is re-derived by
+`simulator/scripts/v6_verify_composition.py`, and that script is extended in
+LOCKSTEP with any new lemma.
 
 ## What is provisional in Paper III (redblack-solving-g.tex)
 
@@ -65,14 +174,14 @@ When solver v7 work lands, update in this order:
 - **Table `tab:sandwich`**: the certificate row is "trivial (2.0)"
   today. It changes ONLY when `composed_cert.py` prints a non-vacuous
   a-priori assembly (audited rules: sup over opponent-steerable
-  chains, not on-path means - see the 1.958 incident box; do not
-  repeat that mistake with a new number). Probe rows update only from
-  fresh probe runs (n and CI in the caption).
+  chains, not on-path means - see the 1.958 remark; do not repeat that
+  mistake with a new number). Probe rows update only from fresh probe
+  runs (n and CI in the caption).
 - **Section `sec:program`**: convert completed items to results
   prose; the four items map to the v7 memo in the game repo's
-  `docs/solver-v6.md` (final block). Item 2 (cap propagation) is the
-  research risk - if it fails, the program section needs a rewrite,
-  not an edit.
+  `docs/solver/research-certificate.md` (final block). Item 2 (cap
+  propagation) is the research risk - if it fails, the program section
+  needs a rewrite, not an edit.
 - **The abstract and the closing status line** hard-code the sandwich
   [0.078, 2] and "honorability at T'>=4". Update both with any change
   to either jaw.
@@ -84,16 +193,15 @@ When solver v7 work lands, update in this order:
 ## What is stable
 
 - Papers I and II are complete and should only need errata. Paper I's
-  new counts (Sec. 10) are exact and validated; if RULES.md ever
-  changes, `real_game_size.py`'s brute-force validators (H=1,2) are
-  the tripwire.
+  counts (Sec. 10) are exact and validated; if `RULES.md` ever changes,
+  `real_game_size.py`'s brute-force validators (H=1,2) are the tripwire.
 - The incident boxes are records - never delete or soften them; add
   new ones with dates.
 - `redblack-resolving.tex` (Note 3) was absorbed into Paper III and
-  deleted 2026-08-04; its content is in git history and every theorem
-  survives in Paper III sections 4-5 with the same lemma structure.
-  The game repo's `docs/solver-v6.md` still describes it historically;
-  pointers there were updated to name Paper III.
+  deleted 2026-08-04; every theorem survives in Paper III sections 4-5 with
+  the same lemma structure, so a citation of that file is a citation of git
+  history. The game repo's `docs/solver/research-certificate.md` names Paper
+  III.
 
 ## Numbers that exist but are not yet in any paper
 
@@ -101,51 +209,7 @@ When solver v7 work lands, update in this order:
   is in Paper I's table but the per-H exact integers are only in the
   script output; fine as is.
 - The T'=4 frontier expansion (216 canonical classes, budget-bound
-  tail) was still sweeping at write time; Paper III references its
-  anti-correlation finding qualitatively. When the sweep record is
-  final (`results/solver/v6_frontier_t4*.json` + the merged
-  `checkpoints/solver/v6/frontier/T4/`), a sentence with the final
-  library count belongs in `sec:frontier`.
-
-## Amendments (2026-08-13 restructure)
-
-The repo is being restructured around a new flagship paper
-(`redblack-coupling.tex`, in draft) plus the revised three-paper
-series. Three rules are added; nothing above is rewritten (the
-v-numbers in the older sections are historical record and stay).
-
-1. **Solve names, never version numbers, in all new prose.** The
-   stores are named `solve-2-kernel`, `solve-4-qre-reach`,
-   `solve-5-pruned`, and `profile-cfrpolicy`. The old v-numbers
-   (v0-v10) collapsed solves, strategy profiles, and research
-   programs onto one counter and actively misled the work; the
-   mapping of record is the game repo's `docs/solver-history.md`.
-   New text in any `.tex` or `.md` here uses the solve names.
-   Existing dated remarks and this file's older sections keep their
-   original vocabulary as audit trail.
-
-   **`solve-6-cfrpolicy` was renamed to `profile-cfrpolicy` on
-   2026-08-14** (it is a profile, not a solve: its values are
-   byte-identical to solve-4's). The four `.tex` files were
-   deliberately NOT rewritten. Roughly half their occurrences are
-   artifact filenames - `probe_solve-6-cfrpolicy_a.json`,
-   `pool_solve-6-cfrpolicy_vs_solve2_full.json` - which are frozen
-   because the papers cite them, and a paper that calls the store
-   `profile-cfrpolicy` while citing `probe_solve-6-*.json` is less
-   coherent than one that uses the name its artifacts carry. Papers
-   are dated documents; they keep the name in force when they were
-   measured. If you write NEW paper prose about this store, use
-   `profile-cfrpolicy` and say once that the artifacts predate the
-   rename.
-2. **The flagship carve-out.** `redblack-coupling.tex` is standalone:
-   it carries its own preliminaries and cites the series as [RB-I],
-   [RB-II], [RB-III] bibliography references. It does NOT use
-   cross-paper hardcoded theorem numbers (house rule 4 above binds
-   Papers I-III only, and renumbering in the series must never
-   require touching the flagship). The lockstep-PDF rule (house
-   rule 3) and no-number-without-a-script (house rule 1) apply to it
-   in full.
-3. **`UPDATE_PLAN.md` is superseded.** Its 2026-08-03 audit drove the
-   2026-08-04 rewrite and is kept as audit trail; the 2026-08-13
-   header at its top records the new four-document structure. Do not
-   work from its item lists.
+  tail) is referenced only qualitatively in Paper III. When the sweep record
+  is final (`results/solver/v6_frontier_t4*.json` + the merged
+  `checkpoints/solver/v6/frontier/T4/`), a sentence with the final library
+  count belongs in `sec:frontier`.
