@@ -129,7 +129,7 @@ measured. Do not restate an older figure from git history over one of these.
 - **Full belief carrying (v5 window, 2026-08):** closes essentially the entire
   certified gap, 0.598 -> 0.078 [0.016, 0.139] - to this instrument the reset
   is not merely the dominant term but the whole of it. Beliefs pay in
-  DEFENCE, not offence (head-to-head gain about 0).
+  DEFENSE, not offense (head-to-head gain about 0).
 - **Two instrument traps worth an appendix:** the `eps_lb`-is-a-lower-bound
   trap (an apparently negative eps), and the per-state/per-row aliasing bug
   that VOIDED all pre-fix composed-eps figures. Meters need gates too.

@@ -16,20 +16,20 @@
 % ---- palette -------------------------------------------------------------
 \definecolor{rbred}{HTML}{B3202C}
 \definecolor{rbblack}{HTML}{1A1A1A}
-\definecolor{rbgrey}{HTML}{6E7278}
+\definecolor{rbgray}{HTML}{6E7278}
 \definecolor{rblight}{HTML}{E8E6E1}
 \definecolor{rbaccent}{HTML}{1F6F8B}
 
 % ---- tikz styles ---------------------------------------------------------
 \tikzset{
-  ph/.style   = {rectangle, rounded corners=3pt, draw=rbgrey, thick,
+  ph/.style   = {rectangle, rounded corners=3pt, draw=rbgray, thick,
                  fill=rblight, minimum height=8mm, minimum width=20mm,
                  font=\small\sffamily, align=center},
   st/.style   = {circle, draw=rbblack, thick, fill=white,
                  minimum size=7mm, font=\scriptsize, inner sep=1pt},
   term/.style = {rectangle, draw=rbred, thick, fill=rbred!8,
                  minimum size=6mm, font=\scriptsize, inner sep=2pt},
-  ed/.style   = {-{Stealth[length=2mm]}, draw=rbgrey, thick},
+  ed/.style   = {-{Stealth[length=2mm]}, draw=rbgray, thick},
   edr/.style  = {-{Stealth[length=2mm]}, draw=rbred, thick},
   lbl/.style  = {font=\scriptsize\sffamily, inner sep=1pt},
 }
@@ -678,9 +678,9 @@ made: at $x+y=k_m$ the bidder has produced the claim and the round is over.
   }
   \node[term, minimum height=9mm] (res) at (3.1,1) {resolution};
   \foreach \n in {n20, n11, n02}{ \draw[edr] (\n) -- (res); }
-  \node[lbl, anchor=west, text=rbgrey] at (0.15,2.75)
+  \node[lbl, anchor=west, text=rbgray] at (0.15,2.75)
     {right $=$ flip the bidder's deck \quad down $=$ flip the challenger's deck};
-  \node[lbl, anchor=west, text=rbgrey] at (0.15,3.2)
+  \node[lbl, anchor=west, text=rbgray] at (0.15,3.2)
     {the frontier $x+y=\kappa-1$ resolves on the next flip: made if on-color, bust if not};
 \end{tikzpicture}
 \caption{The procurement lattice for a final bid count of $\kappa=3$ with
@@ -807,10 +807,10 @@ only the cut points moved, by exactly one discard.
   \draw[ed] (pro2)--(dis2);
 
   % --- rules brackets (above)
-  \draw[decorate, draw=rbgrey, thick] (0.5,7) -- (56.5,7);
-  \node[lbl, text=rbgrey] at (28,10.5) {rules round 1};
-  \draw[decorate, draw=rbgrey, thick] (58.5,7) -- (114.5,7);
-  \node[lbl, text=rbgrey] at (86,10.5) {rules round 2};
+  \draw[decorate, draw=rbgray, thick] (0.5,7) -- (56.5,7);
+  \node[lbl, text=rbgray] at (28,10.5) {rules round 1};
+  \draw[decorate, draw=rbgray, thick] (58.5,7) -- (114.5,7);
+  \node[lbl, text=rbgray] at (86,10.5) {rules round 2};
 
   % --- boundary markers
   \foreach \x in {43.5, 101.5}{
@@ -827,7 +827,7 @@ only the cut points moved, by exactly one discard.
     {$T'=T-1$ cards in play for all of it};
 \end{tikzpicture}
 \caption{The same event tape, cut two ways. The rules bracket a round from
-reorder to discard (grey, above). The analysis brackets a subgame from one
+reorder to discard (gray, above). The analysis brackets a subgame from one
 procurement resolution to the next (red, below), so the discard moves to the
 front. A boundary sits between procurement and discard, which is why a
 boundary's hand sizes $n_i$ are \emph{pre}-discard while the round that
@@ -1246,7 +1246,7 @@ Total & $5{,}485$ & $6{,}051$ & $9.4\%$\\
   tick label style={font=\small}, label style={font=\small},
   axis lines=left, ymajorgrids, grid style={draw=rblight},
 ]
-\addplot[draw=rbgrey, fill=rblight] coordinates
+\addplot[draw=rbgray, fill=rblight] coordinates
   {(1,18) (2,72) (3,192) (4,420) (5,812) (6,1104) (7,1290) (8,1260) (9,882) (10,1)};
 \addplot[draw=rbred, fill=rbred!45] coordinates
   {(1,16) (2,68) (3,186) (4,412) (5,802) (6,1096) (7,1284) (8,1256) (9,364) (10,1)};
@@ -1280,7 +1280,7 @@ max-folding have already restored almost everything.
   }
   \draw[edr] (t1) -- (end);
   \foreach \lab/\n in {9/364, 8/1256, 7/1284, 6/1096, 5/802, 4/412, 3/186, 2/68, 1/16}{
-    \node[lbl, text=rbgrey] at ($(t\lab)+(0,0.9)$) {\n};
+    \node[lbl, text=rbgray] at ($(t\lab)+(0,0.9)$) {\n};
   }
   \node[lbl, text=rbaccent] at ($(t10)+(0,0.9)$) {1};
 \end{tikzpicture}
@@ -1433,7 +1433,7 @@ combinatorial shadow this small.
   xtick={1,2,3,4,5},
   ymin=1, ymax=1e37,
   legend style={font=\scriptsize\sffamily, at={(0.02,0.98)},
-                anchor=north west, draw=rbgrey, fill=white},
+                anchor=north west, draw=rbgray, fill=white},
   grid=major, grid style={rblight},
   every axis plot/.append style={thick},
   tick label style={font=\scriptsize},
@@ -1659,7 +1659,7 @@ differ, using its own five dealt cards to choose. That endgame's exact
 value is $\tfrac{40651}{78302}\approx 0.5192$ to the opener, above $1/2$
 purely because of sampling without replacement, and above the
 $26/51\approx0.5098$ that an opener ignoring its own cards would get.
-Under an idealised infinite deck the same game is exactly even.
+Under an idealized infinite deck the same game is exactly even.
 \end{remark}
 
 \subsection{Measured: how much the class forgets}\label{sec:forgetsmeasured}

@@ -164,7 +164,7 @@ A challenge by the active player is valid iff a bid exists in the current round'
 
 Two different clocks, with two different consequences. (Engine: `reorderWindow` / `turnWindow` and `timeoutAction`.)
 
-**Reorder** gets a flat window of `turnMs`, exempt from the reserve. When it expires, **every** unconfirmed player's hand auto-confirms in its **current** order and bidding begins. Nobody is penalised.
+**Reorder** gets a flat window of `turnMs`, exempt from the reserve. When it expires, **every** unconfirmed player's hand auto-confirms in its **current** order and bidding begins. Nobody is penalized.
 
 **Turn-based phases** (bidding, procurement, discard) give the active seat `turnMs` **plus whatever reserve it has left**. Acting after `turnMs` drains the reserve by the overrun; the reserve never refills. When the deadline passes - that is, once `turnMs` and the reserve are both gone - the seat is **forfeited**, with the same consequences as resigning (§12). There is no auto-bid and no auto-challenge for a human seat: running out of time loses the seat, not just the turn.
 

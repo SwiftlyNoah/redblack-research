@@ -48,7 +48,7 @@ card game with $2.448\times10^{33}$ perfect-recall information sets: the
 properties those two products need are supplied by different equilibrium
 selection principles, and nothing forces one method to produce both.
 Value correctness under composition requires uniqueness and equivariance,
-which an annealed quantal-response ladder supplies (colour-swap residual
+which an annealed quantal-response ladder supplies (color-swap residual
 $3.5\times10^{-9}$ per cell against a CFR+ baseline's $1.67$); playing
 strength requires sharp support, which the same ladder's smoothed
 policies give up (a belief-carrying best-response probe reads a lower
@@ -173,17 +173,17 @@ the extension resolved it (Section~\ref{sec:verdict}).
 \subsection{Rules sketch}
 
 Red/Black is played here heads-up with one shared $52$-card deck of
-exactly $26$ red and $26$ black cards; only colour matters. Each player
+exactly $26$ red and $26$ black cards; only color matters. Each player
 is dealt five cards, and hands only ever shrink. A round has four
 phases. In \emph{reorder}, each player privately orders their own hand;
 index $0$ is the top. In \emph{bidding}, the starting player bids a pair
-(count, colour), asserting that at least that many cards of that colour
+(count, color), asserting that at least that many cards of that color
 are in play across both hands; play alternates, and each turn the active
-player either raises (same colour, strictly higher count) or challenges.
+player either raises (same color, strictly higher count) or challenges.
 A challenge triggers \emph{procurement}: the bidder repeatedly flips the
 current top card of either player's deck, and must reveal count cards of
-the bid colour before revealing a single off-colour card. The first
-off-colour flip loses the contest for the bidder; reaching the count
+the bid color before revealing a single off-color card. The first
+off-color flip loses the contest for the bidder; reaching the count
 loses it for the challenger. In \emph{discard}, the loser secretly
 removes one card from their hand; a player whose hand reaches zero is
 eliminated, and the last player standing wins. Flips are public during
@@ -202,7 +202,7 @@ sets, so no tabular method touches $\game$ directly. The same paper
 proves that at every round boundary the reachable public posterior over
 the two seats' private types factorizes as a strategy-independent class
 prior times two per-seat tilt vectors, where a \emph{class} is the
-public state at a procurement resolution (hand sizes, revealed-colour
+public state at a procurement resolution (hand sizes, revealed-color
 bounds, and the round's public outcome data).
 
 \begin{definition}[The abstraction $\gp$ \cite{rb1,rb2}]\label{def:gp}
@@ -219,7 +219,7 @@ layers: each class is solved as a two-player zero-sum subgame whose
 leaves are priced from the stored values of its successor classes (the
 \emph{bootstrap}). For each class the store holds the game value, the
 per-type-pair value decomposition $\vtypes$ (the cells parents actually
-read), and the behavioural policy tables.
+read), and the behavioral policy tables.
 
 \begin{definition}[Round-local and real-game exploitability]
 \label{def:eps}
@@ -340,13 +340,13 @@ load-bearing: nothing forces one method to produce both products.
 \label{sec:cfrfree}
 
 Red/Black's deck has exactly $26$ red and $26$ black cards and no other
-card attribute exists, so swapping the colours is an automorphism of
-$\game$ and of $\gp$ (the class prior is colour-symmetric). The value of
-a class must equal the value of its colour-swapped image with types
+card attribute exists, so swapping the colors is an automorphism of
+$\game$ and of $\gp$ (the class prior is color-symmetric). The value of
+a class must equal the value of its color-swapped image with types
 remapped, exactly, for any equilibrium. The solver never enforces this,
 which is what makes it a meter.
 
-Measured on the CFR+ solve of record, solve-2: of $2{,}971$ colour
+Measured on the CFR+ solve of record, solve-2: of $2{,}971$ color
 orbits, $2{,}206$ violate, with worst $\vtypes$ cell error $1.67$ on
 the $[-1,+1]$ scale, while the same classes report $\epsround$ between
 $5\times10^{-5}$ and $10^{-4}$ (script \path{check_symmetry.py},
@@ -369,7 +369,7 @@ $1000\times$, and parents inherit genuinely different games \cite{rb2}.
 \label{rem:enforce}
 An earlier solve in this series enforced the seat-mirror symmetry by
 construction, after which the mirror gap read zero because it was forced
-to. The colour swap, which nothing enforced, later read violations of
+to. The color swap, which nothing enforced, later read violations of
 the same $\sim0.11$ magnitude on the enforced solve: the defect had been
 hidden, not fixed \cite{rb2}. Every symmetry in this paper is measured
 and never imposed, and the coupling's acceptance checks
@@ -392,7 +392,7 @@ taking the last iterate. For every
 $\tau>0$ the regularized game has a unique equilibrium, continuous in
 its leaf inputs, so the composition problem of
 Section~\ref{sec:cfrfree} is solved by construction rather than by
-tolerance. Measured on the full re-solve (solve-4): colour equivariance
+tolerance. Measured on the full re-solve (solve-4): color equivariance
 holds on all $2{,}971$ orbits with worst residual $3.5\times10^{-9}$
 per cell, against the CFR+ baseline's $1.67$
 (\code{check\_symmetry.py}; \cite{rb2}).
@@ -473,11 +473,11 @@ The feared cost of the coupling was the return of per-class selection
 freedom in the \emph{policies}. The policy-equivariance sweep (script
 \path{check_policy_symmetry.py}, artifact
 \path{policy_symmetry_solve-6-cfrpolicy.json}) measures the policy
-distance $\deps$ across all $360$ audited colour orbits: $360/360$
+distance $\deps$ across all $360$ audited color orbits: $360/360$
 records, median $1.2\times10^{-9}$, maximum $0.000$. The cost never
 materialized, and the reason is worth recording: deterministic CFR+ is
-an equivariant map, so over colour-equivariant inputs (the frozen QRE
-prices) it returns colour-equivariant policies. The selection noise of
+an equivariant map, so over color-equivariant inputs (the frozen QRE
+prices) it returns color-equivariant policies. The selection noise of
 Section~\ref{sec:cfrfree} was never CFR+ acting alone; it was CFR+
 composing its own corrupted inputs up the bootstrap, and pinning the
 inputs removes the seed.
@@ -592,7 +592,7 @@ between the two kinds of surgery.
 
 The solved abstraction rewards an action that the real game punishes:
 at some procurement information sets, flipping one's own known
-off-colour card (a \emph{suicide flip}, guaranteed to lose the contest)
+off-color card (a \emph{suicide flip}, guaranteed to lose the contest)
 is simultaneously optimal in $\gp$ and dominated in $\game$, because
 the belief reset launders the self-revelation the flip would cost in
 the real game \cite{rb2}. The $\gp$ equilibrium plays it with
@@ -621,7 +621,7 @@ subgame. Provenance is read back from the finished policies rather than
 from the configuration that requested them: $2{,}209/2{,}209$ canonical
 class-solves masked, $14{,}777{,}285$ policy rows locked, worst
 residual mass on any locked row exactly $0$ (append-only record
-\code{solve-meta.jsonl}; colour-swap and $\deps$ checks in
+\code{solve-meta.jsonl}; color-swap and $\deps$ checks in
 \code{symmetry\_solve-5-pruned.json} and
 \code{policy\_symmetry\_solve-5-pruned.json}). The deployment masks its
 resolves the same way, so the deployed strategy space is the solved

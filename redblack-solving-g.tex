@@ -16,7 +16,7 @@
 % ---- palette (matched to Papers I--II) -----------------------------------
 \definecolor{rbred}{HTML}{B3202C}
 \definecolor{rbblack}{HTML}{1A1A1A}
-\definecolor{rbgrey}{HTML}{6E7278}
+\definecolor{rbgray}{HTML}{6E7278}
 \definecolor{rblight}{HTML}{E8E6E1}
 \definecolor{rbaccent}{HTML}{1F6F8B}
 
@@ -50,7 +50,7 @@
 \begin{abstract}
 \noindent
 Paper~II solved the abstraction $\gp$ of heads-up Red/Black to stated
-per-class tolerances (its 2026-08 colour-swap audit later bounded how
+per-class tolerances (its 2026-08 color-swap audit later bounded how
 much of $\gp$ that pins down; see the remark in Section~2) and
 certified that the solved profile is exploitable in the real game
 $\game$ for at least $0.598$ per game of a $2.0$ range. This paper
@@ -167,7 +167,7 @@ play. Paper~II solved $\gp$ class by class; its solution (the
 the raw material for everything below.
 
 \begin{remark}[What the stored values determine, 2026-08]
-\sloppy Paper~II's colour-swap audit
+\sloppy Paper~II's color-swap audit
 (\path{scripts/check_symmetry.py}) showed that the stored
 second-generation profile determines the values of $\gp$ only to
 about $0.03$ and its type-conditional values to about $0.37$: CFR+
@@ -180,7 +180,7 @@ Section~\ref{sec:results}. How much of the measured leaf term is
 intrinsic to depth-limited resolving and how much was the stored
 surface being undetermined is answered by re-running these
 instruments against the third-generation unique-selection solve
-(Paper~II, Section on the colour-swap audit).
+(Paper~II, Section on the color-swap audit).
 \end{remark}
 
 \paragraph{Boundaries, classes, layers.} A \emph{boundary} $b$ is a
@@ -350,7 +350,7 @@ models.
     ($T'\le8$, 0.183) +- (0.078, 0.079)
     (full carry, 0.078) +- (0.062, 0.061)
   };
-\addplot[color=rbgrey, dashed, thick]
+\addplot[color=rbgray, dashed, thick]
   coordinates {(none,0) (full carry,0)};
 \end{axis}
 \end{tikzpicture}
@@ -707,9 +707,9 @@ there is nothing to buy by solving harder.
 \label{rem:intrinsic}
 The $0.11$--$0.26$ per-resolve charge of Table~\ref{tab:layerterms}
 was later shown to be a property of depth-limited resolving from
-\emph{any} stored belief-reset surface rather than a colour artifact
+\emph{any} stored belief-reset surface rather than a color artifact
 of the incumbent store \code{solve-2-kernel}: pricing the resolves
-from a colour-exact store instead (\code{solve-4-qre-reach}, colour
+from a color-exact store instead (\code{solve-4-qre-reach}, color
 residual $3.5\times10^{-9}$ against the incumbent's $1.67$) left the
 probe's edge unchanged ($0.122$ against $0.078$, $p=0.32$,
 $n=1{,}000$ per arm; the measurement of Remark~\ref{rem:paused}).
@@ -970,9 +970,9 @@ noise, by Paper~II's measurements) are out of scope for this program.
 \begin{remark}[Paused, with a lower bound only, 2026-08]\label{rem:paused}
 Two measurements taken after this program paused settle how it stands.
 First, the hypothesis that the leaf-price dishonorability of
-Section~\ref{sec:results} was largely the incumbent store's colour
+Section~\ref{sec:results} was largely the incumbent store's color
 inconsistency in disguise was refuted: against a re-solve whose values
-are colour-exact to $3.5\times10^{-9}$ where the incumbent is off by
+are color-exact to $3.5\times10^{-9}$ where the incumbent is off by
 $1.67$ (Paper~II's third-generation solve), the resolver-aware probe's
 edge did not fall ($0.122\ [0.060,0.183]$ against the incumbent's
 $0.078\ [0.016,0.139]$, $p=0.32$, two-proportion test at $n=1000$ per
