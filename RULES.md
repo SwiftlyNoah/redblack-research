@@ -1,10 +1,12 @@
-# Red/Black — Complete Rules
+# Red/Black - Complete Rules
 
 Red/Black is a hidden-information bidding game for 2–10 players. A single shared deck is dealt face-down and players bid on how many cards of a chosen color are in play across all hands. Opponents either raise the bid or challenge it, in which case the bidder must literally produce the claimed cards by flipping from any player's deck. Lose a contest → discard a card. Last player standing wins.
 
 This document is intended to be self-contained and precise enough to implement a rules engine or a strategic bot from. All references to "the engine" describe the authoritative server logic in `packages/shared/src/engine/`.
 
 ---
+
+The **Creative Duel** ranked mode plays these rules under one drawn variant per game; the variants are stated in `docs/creative-modes.md` and nowhere in this file.
 
 ## 1. Components
 
@@ -17,36 +19,37 @@ This document is intended to be self-contained and precise enough to implement a
 - Supported player counts: **2 to 10** (inclusive).
 - At game start, every player is dealt exactly **5 cards** from the shuffled 52-card deck. So with `N` players, `5·N` cards are dealt; the remaining `52 − 5·N` cards are removed from the game and never seen.
 - Hand size of 5 is the **maximum** any player can ever hold. A player's hand only ever shrinks; cards are never drawn or returned.
-- Each player sees only their own cards. All other hands are face-down (unknown color, but the **count** of cards in each opponent's hand is always public).
+- Each player sees only their own cards. All other hands are face-down (unknown color, but the **count** of cards in each opponent's hand is always public). Rated games are played with **hidden hands**, where a player sees their own cards in the two phases that pick a card - the reorder and the discard - and not while they are bidding on them - see §6b.
 - Seats are arranged in a fixed circular turn order. Turn order proceeds clockwise around the table. Eliminated seats are skipped.
 
 ## 3. Hand structure (critical)
 
 - A player's hand is an **ordered list** of cards. The order matters for procurement (see §6).
-- **Index 0 is the TOP of the deck** — i.e., the first card that will be flipped if someone procures from this player.
+- **Index 0 is the TOP of the deck** - i.e., the first card that will be flipped if someone procures from this player.
 - Players reorder their own hand secretly during the **reorder phase** (see §4). Between reorders, the order is fixed.
-- A player always knows the colors and order of their own cards.
+- A player always knows the order of their own cards, and controls it. They are shown the colors too, unless the game is played with hidden hands (§6b), in which case they are shown them whenever they have a card to pick - while the order is theirs to change, and again when they must discard - and it is on them to have remembered in between.
 
 ## 4. Round structure
 
 A round consists of four phases in order:
 
-1. **Reorder** — every non-eliminated player privately re-arranges their hand and confirms.
-2. **Bidding** — the starting player bids; turn passes clockwise; each subsequent player either raises or challenges.
-3. **Procurement** — triggered by a challenge; the bidder flips cards trying to produce the bid.
-4. **Discard** — the loser of the procurement secretly removes one of their cards.
+1. **Reorder** - every non-eliminated player privately re-arranges their hand and confirms.
+2. **Bidding** - the starting player bids; turn passes clockwise; each subsequent player either raises or challenges.
+3. **Procurement** - triggered by a challenge; the bidder flips cards trying to produce the bid.
+4. **Discard** - the loser of the procurement secretly removes one of their cards.
 
 Then the next round begins (back to reorder), unless only one player remains, in which case the game is over.
 
-A turn clock applies in every phase. Ranked games are fixed at **15 seconds** per turn plus a **60-second** per-player reserve; a friendly host picks a preset (`relaxed` 30s/180s, `standard` 15s/60s, `blitz` 10s/30s) or plays untimed. Running out of time has different consequences per phase - see §11.
+A turn clock applies in every phase. Ranked games are fixed at **15 seconds** per turn plus a **60-second** per-player reserve; a friendly host picks a preset (`relaxed` 30s/180s, `standard` 15s/60s, `blitz` 10s/30s) or plays untimed. Running out of time forfeits the seat, in every phase - see §11.
 
 ### 4a. Reorder phase
 
 - Every non-eliminated player reorders their hand simultaneously and privately.
 - Reorder is the **only** time hand order can be changed.
 - Once a player confirms their order, it is locked for the round.
-- The phase ends when **all** non-eliminated players have confirmed. Then bidding begins.
+- The phase ends when **all** non-eliminated players have confirmed. Then bidding begins. A player who runs out of time arranging forfeits their seat (§11) and is no longer waited on.
 - Cards revealed by flips in the previous round (see §6) are visible during the previous round's resolution but become hidden again at the start of the next reorder. A player may use that revealed information to decide their new ordering.
+- Under hidden hands (§6b) a player's own hand is face up to them for the whole of this phase and turns face down to them the moment it ends. This and the discard (§4d) are the two phases in which a rated player sees their own cards, and that is why the rule is stated on the phase rather than on the round.
 
 ### 4b. Bidding phase
 
@@ -62,7 +65,7 @@ A turn clock applies in every phase. Ranked games are fixed at **15 seconds** pe
     - has a strictly greater count (at least previous count + 1). There is no upper bound on the increment beyond the total-cards-in-play limit.
   - **Challenge**: declare that the current bid is a lie. This immediately ends bidding and transitions to procurement.
 - A player **cannot** change colors. Once the round's first bid fixes a color, every subsequent bid in that round is on the same color, with strictly increasing counts.
-- A player **cannot** pass without bidding or challenging — those are the only two legal moves once a bid exists.
+- A player **cannot** pass without bidding or challenging - those are the only two legal moves once a bid exists.
 - **Challenge is legal on any turn after the first bid**, including the second action of the round. It is not legal as the very first action (there is no bid yet to challenge).
 
 ### 4c. Procurement phase
@@ -72,7 +75,7 @@ When a player challenges, the most recent bid `B = (count, color)` becomes the "
 - The **bidder** controls procurement (the challenger does nothing; other players do nothing).
 - The bidder repeatedly performs **flip** actions:
   - On each flip, the bidder selects a **target seat** (their own or any other non-eliminated player's seat).
-  - The card flipped is the **current top** of that target's deck (the next un-flipped card from index 0 downwards). Each player's deck is consumed top-down independently — once you've flipped seat X's first card, the next flip from seat X reveals X's second card, and so on.
+  - The card flipped is the **current top** of that target's deck (the next un-flipped card from index 0 downwards). Each player's deck is consumed top-down independently - once you've flipped seat X's first card, the next flip from seat X reveals X's second card, and so on.
   - The flipped card's color is revealed to everyone publicly.
 - The bidder may **switch target seats freely between flips** (e.g., flip seat 2's top, then seat 0's top, then seat 2's second card).
 - A player whose card was flipped **cannot** prevent it; they have no action during procurement.
@@ -86,8 +89,8 @@ When a player challenges, the most recent bid `B = (count, color)` becomes the "
 ### 4d. Discard phase
 
 - The **loser** of procurement (bidder if any wrong-color flip occurred; challenger if the bidder reached the bid) chooses **one card from their hand** to remove.
-- The choice is **private** — the discarded card's identity is not revealed to other players (it is recorded for end-of-game audit / replay only).
-- **Anonymity guarantee.** Other players learn only that the hand shrank by one card. Which card left — including whether it was a card previously flipped face-up — must not be determinable from anything the game exposes. In particular, no client-visible data may allow correlating a card's identity across a discard (see §6a). Knowledge like "she still holds that black I saw flipped" becomes probabilistic the moment she discards: she may have discarded it.
+- The choice is **private** - the discarded card's identity is not revealed to other players (it is recorded for end-of-game audit / replay only).
+- **Anonymity guarantee.** Other players learn only that the hand shrank by one card. Which card left - including whether it was a card previously flipped face-up - must not be determinable from anything the game exposes. In particular, no client-visible data may allow correlating a card's identity across a discard (see §6a). Knowledge like "she still holds that black I saw flipped" becomes probabilistic the moment she discards: she may have discarded it.
 - If the loser holds exactly **one** card, the discard is forced (no choice) and resolves automatically.
 - Discarding their last card **eliminates** the player. They take no further actions; turn order skips them.
 - After the discard, the round ends.
@@ -111,22 +114,45 @@ This is the canonical list of what each player knows. A bot's "information set" 
 - The outcome of the most recent completed round: who lost, what bid was being tested, the full sequence of flips. **The discarded card's identity is NOT public.**
 
 **Private to each player:**
-- The colors and order of their own hand.
+- The colors and order of their own hand. Under hidden hands (§6b) the table shows the colors during the reorder and the discard only; the order is always theirs.
 - The identity of any card they themselves discarded (no one else learns it).
 
 **Reset between rounds:**
 - The bid history is cleared at the start of each new round.
 - Flips from the previous round become hidden again at the start of the next reorder phase. The fact that a card was flipped (and what color it was) is **visible during the round it was flipped in and through that round's discard phase**, but is hidden again from public view once the next reorder begins. (Players are free to remember it; the engine simply stops surfacing it. A bot must remember it itself.)
-- A card that was flipped in round K is still in its owner's hand for round K+1 unless that owner was the loser and chose to discard it — but its position in the deck is whatever the owner sets during the next reorder.
+- A card that was flipped in round K is still in its owner's hand for round K+1 unless that owner was the loser and chose to discard it - but its position in the deck is whatever the owner sets during the next reorder.
 
 **Persistent across rounds (memory a bot should maintain):**
-- The 26R / 26B global card budget. Every flipped card observed (in any round) reduces the unknown distribution — as **multiset** knowledge about that player's hand ("I have seen a black and a red flipped from her hand"), degraded by that player's subsequent discards: you can never know whether a discard removed a previously-seen card (§4d anonymity, §6a).
-- Every discarded card's existence (count of total cards in play) but **not** its color or identity, **unless** the discarder voluntarily exposes it (which they cannot — there is no such action).
+- The 26R / 26B global card budget. Every flipped card observed (in any round) reduces the unknown distribution - as **multiset** knowledge about that player's hand ("I have seen a black and a red flipped from her hand"), degraded by that player's subsequent discards: you can never know whether a discard removed a previously-seen card (§4d anonymity, §6a).
+- Every discarded card's existence (count of total cards in play) but **not** its color or identity, **unless** the discarder voluntarily exposes it (which they cannot - there is no such action).
 - Bidding behavior of opponents in past rounds (signal about their hands and their bluffing tendency).
 
 ### 6a. Card identity anonymity (implementation requirement)
 
-Projected views must not give opponents any stable per-card identity that survives a reorder. Opponents' unflipped cards are indistinguishable card backs; a card flipped in round K is identifiable only within round K (by its slot, until the next reorder scrambles positions). After the next reorder, all of a player's cards are anonymous again: observers may remember the **colors** they saw (multiset knowledge, above), but may never re-identify which physical card is which — and therefore can never determine which card a discard removed. Any client-visible identifier (card id, stable ordering key, etc.) that would allow cross-reorder or cross-discard tracking of an opponent's card violates this rule.
+Projected views must not give opponents any stable per-card identity that survives a reorder. Opponents' unflipped cards are indistinguishable card backs; a card flipped in round K is identifiable only within round K (by its slot, until the next reorder scrambles positions). After the next reorder, all of a player's cards are anonymous again: observers may remember the **colors** they saw (multiset knowledge, above), but may never re-identify which physical card is which - and therefore can never determine which card a discard removed. Any client-visible identifier (card id, stable ordering key, etc.) that would allow cross-reorder or cross-discard tracking of an opponent's card violates this rule.
+
+### 6b. Hidden hands (the rated variant)
+
+Every **rated** game - Ranked Duel and Ranked Table - is played with **hidden hands**, and hidden hands is simply how the game is played. Friendly tables and practice games against a bot are the **exemption**: they leave a player's own hand face up throughout and play exactly as §6 describes. That exemption is a relaxation for casual play and for teaching, added after the fact; it is the variant, and this section is the rule.
+
+Under hidden hands, a player's own cards are face up **while they are choosing one of them, and only then**. There are exactly two such phases, and they bracket the round:
+
+- **The reorder (§4a).** Every non-eliminated player reorders their hand simultaneously and privately, and that is the phase in which a player looks at their hand and decides its order - so the hand shows for the whole of every reorder, in round 1 exactly as in round 9.
+- **The discard (§4d).** The loser of the procurement secretly removes one of their cards, permanently. That is a choice of a specific card too, and it is the one choice in the game that cannot be taken back, so the hand shows for the whole of it.
+
+The instant the reorder closes and bidding opens, a player's own deck turns face down to them, and it stays down through bidding and procurement. It turns face up again the moment procurement resolves and the discard opens. The only thing that turns one of their own cards face up before then is a flip during procurement, visible for that round and hidden again at the next reorder like any other flip. When the game finishes, every hand is shown.
+
+There is no first-round grace period and there is no permanent veil, because neither is the mechanic. The player always gets to see the hand they are choosing from, and never gets to see it while they are bidding on it.
+
+Veiling the discard as well was tried and reversed. It cost the player the only irreversible move in the game - picking one of five identical backs to lose forever - and bought nearly nothing, because the discard is the last phase of a round and the next reorder shows the same hand face up seconds later. The memory tax is levied where it is a tax: on the bidding.
+
+Nothing else changes. The hand is still an ordered list the player alone controls; reorder still moves those cards, and moves them in color; the discard still takes one of them, still secretly. What the player no longer has, once the bidding starts, is the table telling them which card is which.
+
+**This is a display rule, not a projection rule.** The server goes on sending a player their own colors in every phase; the table simply stops drawing them for the bidding and the procurement. That is deliberate, and it is the one thing about hidden hands most likely to be "fixed" by someone who has not read this paragraph.
+
+The reason is that the memory mechanic is a game feel and not a security boundary. The player has *already seen* those cards, at the reorder, minutes or seconds ago - that is the whole design - so anyone motivated enough to defeat the mechanic writes them down, and no amount of withholding on the wire reaches that adversary. Withholding would, meanwhile, cost a great deal: the own hand is what the client's optimistic apply, the reorder and the discard all address, and it is what every bot policy in the repo consumes. Paying that to inconvenience a player who could instead use a pen would be a bad trade, so it is not made. Hidden hands is a memory *tax*, and a player who keeps notes is playing correctly.
+
+Two consequences fall straight out of that. A bot-held seat is unaffected and reads its own hand as it always did - there is no felt in front of it to hide anything from. And a player's own colors are absent from the rendered table, not from the payload behind it: §6a's card-identity guarantees are about what *opponents* can derive, and they are untouched here.
 
 ## 7. Worked example
 
@@ -139,7 +165,7 @@ Projected views must not give opponents any stable per-card identity that surviv
 4. **Discard.** Bob secretly removes one card (say, a black). His hand is now 4 cards (BRBR in his private view).
 5. **Next round** starts. Carol won the procurement (she didn't lose a card), so she is the new starting bidder. All players reorder, then Carol bids.
 
-Note that everyone now publicly knows Alice's old top card was a black — but only for this current round's resolution. After Carol opens reorder for the next round, that information is no longer surfaced by the engine, though all players (and any bot) should still remember it: Alice still holds that black somewhere in her hand of 5 (she didn't lose it), and total cards in play decreased by 1.
+Note that everyone now publicly knows Alice's old top card was a black - but only for this current round's resolution. After Carol opens reorder for the next round, that information is no longer surfaced by the engine, though all players (and any bot) should still remember it: Alice still holds that black somewhere in her hand of 5 (she didn't lose it), and total cards in play decreased by 1.
 
 ## 8. Round 1 starting player & turn rotation
 
@@ -147,7 +173,7 @@ Note that everyone now publicly knows Alice's old top card was a black — but o
 - Turn order is clockwise: from seat `s`, the next active player is found by stepping clockwise (in the engine: **increasing** seat index modulo `N`) and skipping eliminated seats.
 - Subsequent rounds: the **winner of the previous procurement** starts. (The engine stores this as `lastRoundOutcome.winnerSeat`.)
 
-## 9. Bid validity — quick reference
+## 9. Bid validity - quick reference
 
 A bid `(count, color)` placed by the active player is valid iff:
 - `count` is a positive integer.
@@ -158,15 +184,15 @@ A bid `(count, color)` placed by the active player is valid iff:
 
 ## 10. Challenge validity
 
-A challenge by the active player is valid iff a bid exists in the current round's bid history. There is no other restriction — challenge is legal on the second action of the round (the player immediately after the opener) and on every turn thereafter.
+A challenge by the active player is valid iff a bid exists in the current round's bid history. There is no other restriction - challenge is legal on the second action of the round (the player immediately after the opener) and on every turn thereafter.
 
 ## 11. Time-outs
 
-Two different clocks, with two different consequences. (Engine: `reorderWindow` / `turnWindow` and `timeoutAction`.)
+One reserve, spent the same way everywhere, with one consequence when it runs out. (Engine: `decisionWindowMs` and `timeoutAction`.)
 
-**Reorder** gets a flat window of `turnMs`, exempt from the reserve. When it expires, **every** unconfirmed player's hand auto-confirms in its **current** order and bidding begins. Nobody is penalized.
+A player gets `turnMs` for the decision in front of them; past that they spend their own reserve, drained by the overrun, and it never refills. Arranging a hand is charged exactly like bidding, procuring or discarding. When the deadline passes - that is, once `turnMs` and the reserve are both gone - the seat is **forfeited**, with the same consequences as resigning (§12). There is no auto-bid, no auto-challenge and no auto-confirm: running out of time loses the seat, not just the turn.
 
-**Turn-based phases** (bidding, procurement, discard) give the active seat `turnMs` **plus whatever reserve it has left**. Acting after `turnMs` drains the reserve by the overrun; the reserve never refills. When the deadline passes - that is, once `turnMs` and the reserve are both gone - the seat is **forfeited**, with the same consequences as resigning (§12). There is no auto-bid and no auto-challenge for a human seat: running out of time loses the seat, not just the turn.
+**Reorder is simultaneous, so each seat's window closes on its own.** Every non-eliminated player spends `turnMs` plus their own reserve measured from the start of the phase, and seats holding different reserves therefore run out at different moments. A seat that runs out forfeits, and it forfeits alone: the players still arranging keep the whole of their own remaining reserve and the phase stays open for them, exactly as a forfeit on a turn leaves every other seat's clock untouched. Bidding begins once nobody is left arranging.
 
 Seats played by a bot have no clock at all (a server task drives them), and an untimed game has no deadlines in any phase.
 
@@ -189,9 +215,10 @@ A bot should treat "fall back to challenge" as the default consequence of having
 - **Forced discard.** If the procurement loser has exactly one card, the discard is automatic and the player is eliminated immediately.
 - **All-but-one elimination via single discard.** If a discard reduces the table to one non-eliminated player, that player is the winner and the game ends without a further reorder.
 - **Bid count cap.** With small hands late game, the bid count is capped by total cards in play. With 2 players holding 1 card each, the maximum bid is `2 <color>`.
-- **Procurement exhaustion.** It is impossible for the bidder to "run out of cards to flip" before the procurement resolves, because the bid was constrained to ≤ total cards in play. The worst case is that the bidder must flip every card on the table — if all of them are the bid color, the challenger loses; if any are off-color, the bidder loses on that flip.
+- **Procurement exhaustion.** It is impossible for the bidder to "run out of cards to flip" before the procurement resolves, because the bid was constrained to ≤ total cards in play. The worst case is that the bidder must flip every card on the table - if all of them are the bid color, the challenger loses; if any are off-color, the bidder loses on that flip.
 - **First-bid challenge is illegal**, but auto-action covers any case where the opener disconnects (it bids `1 red`).
 - **Eliminated players and procurement targets.** The bidder may not flip from an eliminated player's (empty) seat; eliminated seats hold no cards.
+- **Reorder forfeit.** A seat that spends its whole reserve arranging forfeits like any other seat; the rest of the table keeps its own time and the phase stays open for them.
 
 ## 13. State transitions (engine perspective)
 
@@ -214,12 +241,12 @@ The active seat shifts according to:
 
 ## 14. Strategy notes for a bot
 
-These are not rules — they are observations about the game's structure that a learning agent should be aware of when designing its policy.
+These are not rules - they are observations about the game's structure that a learning agent should be aware of when designing its policy.
 
 ### 14a. State representation
 
 A sufficient information state for the active bot at any decision point includes:
-- Own hand (ordered list of colors).
+- Own hand (ordered list of colors). Hidden hands (§6b) does not change this: it hides a human's cards from the felt once the round is being played, and a bot has no felt.
 - Public hand sizes of every player (including own).
 - Bid history this round.
 - Flip history this procurement (and memory of previous rounds' flips, mapped to known cards still held by each player).
@@ -231,8 +258,9 @@ From this, a bot can compute, for each opponent, a posterior over the unordered 
 
 ### 14b. Reorder strategy
 
-- The top card of your deck is the first thing flipped if you become a procurement target. If you put a black on top and someone procures `red`, you instantly bust them — but only if they target you first. Bidders prefer to flip players whose tops they expect to match.
+- The top card of your deck is the first thing flipped if you become a procurement target. If you put a black on top and someone procures `red`, you instantly bust them - but only if they target you first. Bidders prefer to flip players whose tops they expect to match.
 - Mixing your top card across rounds (sometimes top-red, sometimes top-black) prevents opponents from inferring your hand from your reorder behavior.
+- Under hidden hands (§6b) the reorder is where the memory tax is *incurred*, not where it is paid: you can see the hand for the whole time you are arranging it, and it goes down the moment you have finished. So the skill is choosing an order you will still be sure of three flips later - a top card you will not have to guess at, and an arrangement simple enough to survive a round of other people's bidding.
 - Putting your minority color on top is a defensive move (bidder hits a non-match early on you); putting majority color on top is offensive (you can flip safely from your own deck during your own procurement).
 
 ### 14c. Bidding strategy
@@ -246,14 +274,14 @@ From this, a bot can compute, for each opponent, a posterior over the unordered 
 ### 14d. Challenge strategy
 
 - The decision is binary: "I would rather see procurement resolved at the current count than raise it." Equivalent to: P(bid is true) < P(I can produce one more of this color in the current public state) − some risk premium.
-- Tools for estimating P(bid is true): your own hand cards of that color subtract from the unknowns; opponents who have already raised credibly likely hold ≥1 of the bid color; the global 26/26 budget bounds the universe.
-- The active bidder when a player challenges is the **most recent bidder**, not the challenger — so the challenger never produces cards. Only the bidder's hand and procurement choices determine the outcome.
+- Tools for estimating P(bid is true): your own hand cards of that color subtract from the unknowns (under hidden hands, §6b, only as far as you remember the hand you arranged at the reorder); opponents who have already raised credibly likely hold ≥1 of the bid color; the global 26/26 budget bounds the universe.
+- The active bidder when a player challenges is the **most recent bidder**, not the challenger - so the challenger never produces cards. Only the bidder's hand and procurement choices determine the outcome.
 
 ### 14e. Procurement strategy (flip ordering)
 
 - The bidder picks both *whom* to flip and *when to switch*. Flipping a card commits the information to public view.
 - Flip from decks whose top cards you most strongly believe are the bid color.
-  - Your own deck's top is known with certainty. If your top matches the bid color, flipping from yourself is a free win toward the count.
+  - Your own deck's top is known with certainty - under hidden hands (§6b), as certainly as you remember the top you chose at this round's reorder. If your top matches the bid color, flipping from yourself is a free win toward the count.
   - Opponents who recently raised to the bid color likely hold cards of that color, but you don't know which slot it's in.
 - Once a player's top is consumed (off-color or on), the next slot is unknown again. Don't keep flipping from a deck whose top you've just busted.
 - The optimal flip policy is a sequential decision under uncertainty. A bot can plan it as a tree search: at each step, pick the seat and slot maximizing P(success of remaining procurement), conditioned on the public state plus your private hand.
@@ -263,12 +291,12 @@ From this, a bot can compute, for each opponent, a posterior over the unordered 
 
 - Discard is private. Keeping your stronger color (or the color that will let you bid offensively next round) is usually correct.
 - If you suspect future rounds will be on the opposite color, discarding from the opposite color preserves your ability to procure.
-- The discarded card **does** reduce the global card budget by one (publicly known), but its color stays hidden — opponents update only their joint posterior over your hand using the constraint "lost one of (your hand) + (universe constraint)".
+- The discarded card **does** reduce the global card budget by one (publicly known), but its color stays hidden - opponents update only their joint posterior over your hand using the constraint "lost one of (your hand) + (universe constraint)".
 
 ### 14g. Endgame
 
 - Once total cards in play are small (e.g., ≤ 6), bid counts are mechanically bounded and bluffs are easier to detect because uncertainty shrinks.
-- Heads-up (2 players), the game becomes a near-perfect-information bluff battle — your hand plus opponent's hand size plus card-budget arithmetic gives you a tight posterior on opponent's colors. Optimal play approaches a solvable extensive-form game.
+- Heads-up (2 players), the game becomes a near-perfect-information bluff battle - your hand plus opponent's hand size plus card-budget arithmetic gives you a tight posterior on opponent's colors. Optimal play approaches a solvable extensive-form game.
 
 ### 14h. Self-play training notes
 
@@ -281,16 +309,17 @@ From this, a bot can compute, for each opponent, a posterior over the unordered 
 
 | Term | Definition |
 |---|---|
-| **Bid** | A claim of the form `(count, color)` — that there are at least `count` cards of `color` across all in-play hands. |
+| **Bid** | A claim of the form `(count, color)` - that there are at least `count` cards of `color` across all in-play hands. |
 | **Raise** | A new bid in the same round, same color, strictly higher count. |
 | **Challenge** | An action by the active player that ends bidding and forces the most recent bidder to procure. |
 | **Procurement** | The phase where the bidder flips cards trying to reach the bid count of the bid color before any off-color flip. |
 | **Flip** | A single reveal of the top card of a chosen player's deck during procurement. |
-| **Top of deck** | Index 0 of a hand's ordered list — the first card to be flipped. |
+| **Top of deck** | Index 0 of a hand's ordered list - the first card to be flipped. |
 | **Reorder** | Pre-bidding phase where each player privately re-arranges their own hand. |
 | **Discard** | The procurement loser secretly removes one card from their hand. |
 | **Elimination** | Triggered when a player's hand reaches 0. |
 | **Round** | One full reorder → bidding → procurement → discard cycle. |
+| **Hidden hands** | How a rated game is played (§6b): your own cards are face up while you set your order and while you discard, and face down for the bidding and the reveal in between. |
 
 ### 15a. Player-facing wording
 
@@ -302,5 +331,6 @@ The engine, the code and this document use the canonical terms above. Copy shown
 | Procure / prove | turn up (or show) |
 | Reorder | set your order |
 | A player's cards / hand | their deck |
+| Hidden hands | face down (e.g. "you see your deck to set your order, then bid on it face down") |
 | Bidder succeeded | "bid good" |
 | Bidder failed | "bid failed" |
