@@ -18,13 +18,17 @@ measure. Most of these papers are about refusing to let that happen.
 
 ## The result
 
-The final strategy is one no best-response probe I can build knows how
-to beat. Across 10,000 paired games the probe actually loses to it, so
+The final strategy, played with beliefs carried across rounds, is one
+no best-response probe I can build knows how to beat. Across 10,000 paired games the probe actually loses to it, so
 the exploitability lower bound it returns is negative, -0.025 [-0.044,
 -0.005] on a payoff range of 2, which is a statement about the probe
 running out of room rather than a proof the strategy is unbeatable. The
 predecessor, on identical seeds, measured +0.034: the difference
-resolves at p = 3e-5.
+resolves at p = 3e-5. Carrying beliefs means re-solving every round,
+which costs seconds per move, so the bot on the live site plays the
+strategy tables directly and never re-solves. Its store has since been
+replaced (`profile-solve9b`, 2026-09-02), and the probe has not
+measured that one.
 
 It got there through a fact I find genuinely pretty: the two things a
 decomposed solver produces - subgame *values* and a playable *policy* -
@@ -40,8 +44,11 @@ removed a provably-bad action from the solved game, expecting
 improvement. Exploitability quadrupled. A quarter of the damage:
 the strategy store doubles as the bot's model of its opponent, and a
 model that says an action is impossible breaks the moment a real
-opponent plays it. Pruning your own play is defense; pruning your
-model of the world is blindness.
+opponent plays it. Pruning your model of the world is blindness.
+Pruning your own play at play time is not automatically safe either:
+one of the bot's play-time guards turned out to delete moves that are
+better than the one it leaves (Paper II, the 2026-11 remark on the
+impossible-count guard).
 
 ## The papers
 
@@ -52,7 +59,8 @@ model of the world is blindness.
 | [Paper II - The Solve and the Meters](redblack-cfrplus.pdf) | Solving the abstraction exactly, and the measurement discipline: every instrument defined before it's trusted, including the ones that turned out to be blind. |
 | [Paper III - Playing the Real Game](redblack-solving-g.pdf) | Carrying beliefs across the abstraction's seams, safe re-solving, and an honest negative: why a certified upper bound stays out of reach. |
 
-`RULES.md` is the canonical rule text everything derives from.
+`RULES.md` is a verbatim copy of the game repo's canonical rule text,
+last synced 2026-11-20.
 
 ## If you're skimming
 

@@ -15,6 +15,16 @@ recorded in the game repo's `simulator/logs/solve-5-journal.md`.
 
 - No em dashes in prose (`---` only in comments/table placeholders);
   prefer commas, periods, parentheses.
+- American spelling everywhere, labels and macro names included (color,
+  gray, behavioral, symmetrized, defense). The papers were converted on
+  2026-11-20; do not reintroduce British forms.
+- **Units of eps_G.** Papers II and III define eps_G as the SUM of both
+  seats' best-response gains (cap 2). The companion checker repo
+  `call-the-bluff` reports exploitability as nash_conv/2, so its numbers
+  are doubled before they enter a paper, and the paper says so once. The
+  probe's reported reading 2(wr - 1/2) is the probe's mean payoff per
+  game: a valid lower bound on the sum, conservative by a factor of 2
+  (Paper III, Preliminaries, "Probes").
 - Banned constructions: the "not X; it is Y" antithesis tic,
   colon-then-elaboration as a default, rhetorical section titles,
   road-map paragraphs beyond one in the intro, re-previews/recaps,

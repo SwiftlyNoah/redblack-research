@@ -218,7 +218,14 @@ anyone. Hands only ever shrink; no card is drawn after the deal.
 A player's hand is an \emph{ordered} list. Index $0$ is the top of the
 deck: the first card that will be flipped if someone procures from it.
 Players see their own cards and nothing of their opponent's except its
-size, which is always public.
+size, which is always public. The canonical rules add a turn clock and,
+for rated play, \emph{hidden hands}, under which the table stops showing
+a player their own colors during bidding and procurement. Neither enters
+the game analyzed here. We assume every move is made in time, so the
+clock's forfeit never fires, and hidden hands is a display rule that
+removes nothing from a player with perfect memory: every own color is
+shown at the reorder that fixes the order, and $G$ assumes perfect
+recall throughout.
 
 \subsection{A round}
 
@@ -659,7 +666,7 @@ challenger's decks respectively. Summing over both colors and all
 $2^{\,k_m-1}$ chains with final count $k_m$ gives the round's total. When
 $n_0=n_1=n$ this is
 \[
-  \#\textsc{proc}(T,n)\;=\;2\sum_{\kappa=1}^{T}2^{\,\kappa-1}\,L(\kappa-1,n,n),
+  \#\textup{\textsc{proc}}(T,n)\;=\;2\sum_{\kappa=1}^{T}2^{\,\kappa-1}\,L(\kappa-1,n,n),
 \]
 the sum running over the possible final counts $\kappa$.
 \end{lemma}
@@ -1703,14 +1710,18 @@ bound on real-game exploitability, with Corollary~\ref{cor:modelfree}
 supplying own-side conditionals that survive an arbitrarily wrong opponent
 model. The distance between the two programs is the measured gap of
 Section~\ref{sec:forgetsmeasured}. A standalone companion paper on solver
-coupling (in preparation) records where the two programs met: the coupled
-store \code{solve-6-cfrpolicy}, whose quantal-response values are held
-fixed while per-class CFR+ policies are re-solved against them. That
-store is the program's endpoint, the first that Paper~III's
-belief-carrying probe cannot beat: its real-game exploitability lower
-bound (the quantity $\epsilon_G$ of Papers~II and~III) reads
-$-0.025$ at $n=10{,}000$ games per arm (artifact
-\code{pool\_solve-6-cfrpolicy\_vs\_solve2\_full.json}).
+coupling records where the two programs met: the coupled store
+\code{solve-6-cfrpolicy} (later renamed \code{profile-cfrpolicy}), whose
+quantal-response values are held fixed while per-class CFR+ policies are
+re-solved against them. Played by Paper~III's belief-carrying agent,
+which re-solves every round under the tracked posterior, it is the
+first store that Paper~III's probe cannot beat: the real-game
+exploitability lower bound (the quantity $\epsilon_G$ of Papers~II
+and~III) reads $-0.025$ at $n=10{,}000$ games per arm (artifact
+\code{pool\_solve-6-cfrpolicy\_vs\_solve2\_full.json}). The bot served
+to players plays a store's tables without re-solving; since 2026-09-02
+its store is \code{profile-solve9b}, which has no probe reading of
+record (Paper~III).
 
 \begin{remark}[Program endpoint, 2026-08]\label{rem:endpoint}
 The bound of record, measured by the probe of Paper~III

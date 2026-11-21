@@ -3,6 +3,7 @@
 \usepackage[margin=1.1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{microtype}
 \usepackage[hidelinks]{hyperref}
 
@@ -160,7 +161,7 @@ n_1'$ is the \emph{layer index}.
 \caption{Results imported from Paper I.}
 \label{tab:imports}
 \small
-\begin{tabular}{@{}p{0.30\linewidth}p{0.36\linewidth}p{0.24\linewidth}@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.36\linewidth}>{\raggedright\arraybackslash}p{0.24\linewidth}@{}}
 \toprule
 Result & Content & Role here\\
 \midrule
@@ -720,9 +721,16 @@ bit-for-bit.
   v(\text{root}) \;=\; +0.02449 \quad\Longrightarrow\quad
   \mathbf{51.22\%} \text{ to the player who opens.}
 \]
-This is the value of $\gp$ of record. The oracle bracket agrees with
-the solved value to $1.4\times10^{-4}$ on every class small enough to
-bracket ($T'\le3$). For scale, the exactly known $T'=2$ endgame gives
+This is the value of $\gp$ of record. The oracle bracket confirms the
+stored class values only at the layer where $\gp$ and $\game$
+coincide. At $T'=2$ all $18$ canonical class values sit inside their
+exact brackets in $\game$, stored minus exact at most
+$2.0\times10^{-4}$. At $T'=3$, $37$ of $66$ fall outside, worst $0.146$
+(stored $-0.657$ against exact $-0.510$ in class
+\code{d0-2.1.1-2.0.0}), the within-subgame belief-reset error that
+Paper~III measures in its frontier census. An earlier revision of this
+paragraph claimed agreement to $1.4\times10^{-4}$ on every class with
+$T'\le3$; the claim is false at $T'=3$ and is withdrawn. For scale, the exactly known $T'=2$ endgame gives
 its opener $40651/78302\approx51.92\%$ (Paper~I, Rem.~10.5).
 
 \begin{remark}[Which root value, 2026-08]\label{rem:rootvalue}
@@ -816,14 +824,15 @@ that reading to the claim that equilibrium-selection prices are invisible on
 every real-game instrument. A 2026-08 measurement refuted the claim.
 
 \begin{remark}[S5-0 refutation, 2026-08]\label{rem:s5refutation}
-Call \emph{play-time guards} the deployment rule that refuses weakly
-dominated actions (the suicide flip of Theorem~\ref{thm:suicide} and
-bids of impossible counts) at play time while leaving the solved
-tables untouched, and call the \emph{belief-carrying probe} Paper~III's
-instrument: the stored profile is deployed with each round re-solved
-under the exactly tracked public posterior, and the LBR probe of
+Call \emph{play-time guards} the rule that refuses the suicide flip of
+Theorem~\ref{thm:suicide} and bids of impossible counts at play time
+while leaving the solved tables untouched, and call the
+\emph{belief-carrying probe} Paper~III's instrument: the stored profile
+is played with each round re-solved under the exactly tracked public
+posterior (the \emph{belief-carrying agent}), and the LBR probe of
 Definition~\ref{def:lbr}, holding a byte-exact shadow of that
-resolver, certifies a lower bound on $\epsG$ of the deployed agent.
+resolver, certifies a lower bound on $\epsG$ of the belief-carrying
+agent.
 On that instrument the guards' price is visible and large. For the
 solve of record (the store \code{solve-2-kernel}), at $n=3{,}200$
 games per arm on matched seeds, the probe certifies
@@ -839,14 +848,69 @@ unique-selection store \code{solve-4-qre-reach}
 (\code{scripts/probe\_resolver.py}, pooled by
 \code{scripts/pool\_probe.py}). One caveat attaches to the magnitude
 rather than the sign: the guards-on probe best-responds against an
-unguarded opponent model, and since the guards prune only weakly
-dominated actions the sign is theory-safe. These pooled figures are
+unguarded opponent model. The original text added that the sign is
+theory-safe because the guards prune only weakly dominated actions;
+that premise is false for the impossible-count rule, and the sentence
+is withdrawn (Remark~\ref{rem:guardcounter}). These pooled figures are
 the $\epsG$ numbers of record for the solve of record. The first
 $n=1{,}000$ batch of the chain reproduced the previously published
 $0.0780$ bound to four decimals before the extension was bought, and
 the batches differ only by seed range; the earlier figure was a
 faithful low-$n$ reading of the same quantity, and the pool extends
 its sample and adds the guards axis.
+\end{remark}
+
+\begin{remark}[The impossible-count guard is not a dominance rule, 2026-11]
+\label{rem:guardcounter}
+The impossible-count guard deletes every bid or raise whose count
+exceeds the bidder's color ceiling (own cards of the color plus
+opponent cards not known to be of the other color), forces a challenge
+of a standing bid that exceeds the ceiling, and plays uniformly over the
+surviving labels when the deletion empties a row. An impossible raise
+loses only if it is challenged, so the deletion is not a dominance
+argument, and nothing in the rule checks whether the action it leaves
+behind is a certain loss. Class \code{d0-3.2.1-1.0.1} exhibits the
+failure in a single decision. The guarded seat holds two red cards,
+the opponent's one card is publicly black, and the opponent opens one
+black. The guard deletes the raises to two and three as impossible and
+leaves the challenge, which loses with certainty because the standing
+bid is provably true, while either raise loses only if challenged. Here
+the guard deletes the weakly \emph{dominant} actions.
+
+The cost was measured exactly in the real game. For a class $C$, let
+$\Gamma(C)$ be the subgame of $\game$ in which chance deals both seats'
+private types from the class prior of $C$ and the real rules are then
+played to elimination by players with perfect recall. The profile is
+the one players face: the served store \code{profile-solve9b}'s pack
+rows at $C$ and at every successor class, with and without the
+guards, and no re-solving, since the bot players meet never re-solves
+(the belief-carrying agent of Remark~\ref{rem:s5refutation} is a
+research configuration). Exploitability in $\Gamma(C)$ is computed in
+exact rational arithmetic by best response. In the units of
+Definition~\ref{def:epsg}, the sum over both seats, the guards move
+\code{d0-3.2.1-1.0.1} from $0.0090$ to $0.2573$ with the class value
+unchanged. Over all $132$ classes at $T'=3$ they change exploitability
+on $70$, raising it on $44$ and lowering it on $26$; the median moves
+from $0.0377$ to $0.257$, the mean from $0.152$ to $0.198$, and the
+maximum is $0.573$ either way. On the $36$ classes at $T'=2$ the guards
+change nothing. The companion computation reports half the sum
+(\texttt{nash\_conv}$/2$), and every figure here is that output
+doubled. The builder, the guard port and the exact best response are
+\path{redblack/extract.py} and \path{redblack/sweep.py}, run on layer
+$T'=3$, in the companion checker repository \code{call-the-bluff},
+whose summary file is \path{redblack/out/summary_T3.json}; \path{reference/br.py}
+there re-derives the class figures independently.
+
+These numbers are subgame exploitabilities at the class prior. Real
+play enters $C$ with a posterior from the factored family of Paper~I,
+so they bound whole-game $\epsG$ in neither direction, and they say
+nothing about $T'\ge4$. They also measure a different object from the
+probe above, which played the belief-carrying agent over
+\code{solve-2-kernel}; that measurement stands as measured. What is
+withdrawn is the claim that a guard's sign follows from theory. Even a
+truly dominated in-round deletion changes what the remaining mix
+reveals to an opponent with perfect recall, so no one-round dominance
+argument makes a play-time deletion free in $\game$.
 \end{remark}
 
 \subsection{The color-swap audit and the unique-selection re-solve}
@@ -868,8 +932,8 @@ mirror no longer is.
 
 \begin{remark}[The audit, 2026-08]
 Measured on the second-generation solve of record
-(\texttt{scripts/check\_symmetry.py}, artifact
-\texttt{symmetry\_full.json}; all $2{,}971$ color orbits), the
+(\path{scripts/check_symmetry.py}, artifact
+\path{symmetry_full.json}; all $2{,}971$ color orbits), the
 invariant fails almost everywhere above the leaves: the per-cell
 decomposition $v_{\text{types}}$ diverges from its swapped image from
 layer $T'{=}3$ (worst $0.055$, rising to $1.67$ at $T'{=}8$), per-type
@@ -1151,9 +1215,9 @@ mask was audited by read-back from the finished policies rather than
 trusted from the configuration: $2{,}209$ of $2{,}209$ canonical
 class-solves masked, $14{,}777{,}285$ rows locked, and the worst
 probability mass on any locked row exactly $0$ (append-only
-provenance in \code{solve-meta.jsonl}). The deployed resolves were
+provenance in \code{solve-meta.jsonl}). The probed agent's resolves were
 masked the same way, and both probe arms below play with guards on
-and zero fallbacks, so the deployed strategy space is the masked one
+and zero fallbacks, so the probed strategy space is the masked one
 end to end.
 
 \paragraph{The verdict.} At $n=3{,}200$ games per arm on the matched
@@ -1189,12 +1253,17 @@ the masked equilibrium prices every surrounding decision against an
 action set no real opponent is restricted to, and the whole strategy
 shifts with it, well beyond the removed action.
 
-The division of labor is now measured rather than argued. Pruning a
-weakly dominated action from own play is defense, and costs nothing
-an opponent can use; pruning it from the model of the world is
-blindness, and the store is both the play policy and that model.
-Guards belong at play time, and the solved game keeps the full action
-set. The store that succeeded the incumbent under exactly this
+The division of labor is now measured rather than argued on the side
+of the solved game. Pruning an action from the model of the world is
+blindness, and the store is both the play policy and that model, so the
+solved game keeps the full action set. An earlier revision added, as
+theory, that pruning a weakly dominated action from own play costs
+nothing an opponent can use. That claim is withdrawn: the
+impossible-count guard is not a dominance rule, and in exact real-game
+subgames at $T'=3$ the guards raise the served profile's
+exploitability on more classes than they lower it
+(Remark~\ref{rem:guardcounter}). Whether a play-time guard helps is a
+measurement for real-game instruments to make, guard by guard. The store that succeeded the incumbent under exactly this
 division, \code{solve-6-cfrpolicy}, which couples
 \code{solve-4-qre-reach}'s values to per-class re-solved CFR+
 policies, is Paper~III's subject.
@@ -1218,20 +1287,23 @@ regression'' while quadrupling real-game exploitability.
 abstraction-internal quality and real-game quality are separate axes, decoupled
 in both directions: profile variants differing by $0.05$/game in
 $\gp$-exploitability measured identically on every real-game instrument
-available at the time (the belief-carrying probe later separated the guarded
-and unguarded deployments; Remark~\ref{rem:s5refutation}), and the
+available at the time (the belief-carrying probe later separated guarded
+from unguarded play; Remark~\ref{rem:s5refutation}), and the
 profile whose $\gp$ meters read $10^{-5}$ to $10^{-4}$ is exploitable for at
 least $0.598$ per game in $\game$. A report citing one axis without the other
 is, on this evidence, misleading regardless of which axis it picks. The
 defensible claim is the conjunction Section~\ref{sec:results} reports: a stated
 round-local tolerance across all classes, a composed exploitability in $\gp$,
-oracle agreement where computable, mirror consistency, an explicit statement
+the oracle comparison where it is computable (agreement at $T'=2$, a measured
+belief-reset gap at $T'=3$), mirror consistency, an explicit statement
 that the profile is an equilibrium of $\gp$ rather than of Red/Black, and the
 real-game instruments alongside.
 
 \paragraph{What is established, and what is not.} Established: every class
 of $\gp$ is solved reproducibly to its stated round-local tolerance, the
-oracle agrees where it can see, and the distance from $\gp$ to $\game$ is
+oracle confirms the stored values at $T'=2$, where $\gp=\game$, and finds
+$37$ of $66$ outside their exact brackets at $T'=3$, and the distance from
+$\gp$ to $\game$ is
 measured, with $\overline{\mathrm{TV}}=0.842$, $\epsG\ge0.598$, and one
 on-path dominated action with its mechanism identified. The color-swap
 audit (Section~\ref{sec:colorswap}) bounds what "solved" delivers for
@@ -1248,8 +1320,8 @@ tilts this paper discards, cuts the probe's certified bound from $0.598$ to
 $0.363$ at a shallow depth gate, $0.183$ deeper, and $0.078$ with full
 carrying at $n=1{,}000$, a complete dose-response ($+0.0919$
 $[+0.0573,\,+0.1262]$ pooled to $n=3{,}200$, and $+0.0306$
-$[-0.0040,\,+0.0652]$ with play-time guards on, the deployed
-configuration; Remark~\ref{rem:s5refutation}). But carrying beliefs soundly, and certifying
+$[-0.0040,\,+0.0652]$ with play-time guards on, both for the
+belief-carrying agent; Remark~\ref{rem:s5refutation}). But carrying beliefs soundly, and certifying
 the result against all opponents rather than one probe family, is a different
 problem with different mathematics. That problem, its theorem, its instruments,
 and its current honest status are Paper~III.
