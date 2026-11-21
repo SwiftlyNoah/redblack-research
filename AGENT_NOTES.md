@@ -252,7 +252,7 @@ Section `sec:frontier-served` is a dated snapshot. Update it, never
 silently, when:
 
 - **T'=4 finishes.** The paragraph "The first layer above" quotes a
-  snapshot of `gbook_t4.py` (82 of 330 classes at 2026-11-21 11:59 UTC,
+  snapshot of `gbook_t4.py` (82 of 330 classes at 2026-11-21 12:36 UTC,
   float brackets, not checker-verified, not served). Replace the snapshot
   in `results/solver/paper3-frontier/t4/` with the finished layer, rerun
   `paper3_frontier_numbers.py`, and if the layer goes through `bin/bluff`
