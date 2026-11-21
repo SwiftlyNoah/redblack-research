@@ -93,7 +93,11 @@ The papers' house rules:
 
 After any count-bearing edit here, run `state_counts.py` and
 `verify_against_engine.py` (31 cross-checks; non-zero exit on any mismatch)
-against the parent repo's simulator. `verify_against_engine.py`,
+against the parent repo's simulator, with its venv:
+`../simulator/.venv/bin/python verify_against_engine.py` from `research/`.
+If that interpreter is missing (exit 127, the base Python was removed),
+rebuild the venv with the recipe in the game repo's `simulator/README.md`
+rather than falling back to the system `python3`. `verify_against_engine.py`,
 `real_game_size.py` and `data/layer-t2.csv` live in this repo, synced
 2026-08-03 from the parent repo that consumes it as a submodule.
 
@@ -166,6 +170,48 @@ measured. Do not restate an older figure from git history over one of these.
   structural fact about the game's information partition, not an
   approximation.
 
+- **The served bot, graded exactly at the frontier (2026-11, Paper III
+  Sec. `sec:frontier-served`).** In Gamma(C) (the real game below class C,
+  entered at the class prior, perfect recall, flip order public), sum
+  units: the served `profile-solve9b` pack at T'=3 has median 0.0377,
+  mean 0.152, max 0.573 (above 0.2 on 48 of 132), against its own
+  epsRound max 1.8e-4; T'=2 max 1.2e-3. Most of the gap is the belief
+  reset (G' with the served successor's values: median 6.5e-3, max
+  0.120). Every number: `simulator/scripts/paper3_frontier_numbers.py`
+  over `simulator/results/solver/paper3-frontier/` (archive prefix
+  `gs://red-black-dev-solver/archive/2026-11-21-paper3/`, with MANIFEST.md).
+- **The guard counterexample and the noprune fix (2026-11).** The old
+  impossible-count guard took `d0-3.2.1-1.0.1` from 0.0090 to 0.257 by
+  deleting the weakly dominant raises; T'=3 median 0.0377 -> 0.257. The
+  noprune guard (served since 2026-11-21) is better on 52 classes, worse
+  on 18 by at most 0.0023; its bidding rule alone equals the raw pack on
+  all 132, and the suicide-flip guard is the whole remaining difference
+  (better on 26, worse on 4 by up to 0.129).
+- **The exact G endgame book (2026-11).** `gbook` (CFR+ or LP mixture)
+  at most 1.001e-6 on all 168 classes; `gbook-cfr` (plain CFR+, the
+  served build) at most 6.1e-4. At tilted entry beliefs the LP-vertex
+  build is brittle (T'=3 median of class medians: raw pack 0.220, old
+  guards 0.289, gbook 0.160, gbook-cfr 0.087), which is why gbook-cfr is
+  served. Certificates are local: they bound whole-game eps_G in neither
+  direction, and rem:paused stands.
+- **Verified checker (2026-11).** Every certificate above is a
+  `bin/bluff` verdict of call-the-bluff's Dafny core (source hash
+  f41039470ccb4ed1, committed at 89a8b73): 336 book certificates plus
+  504 pack verdicts (168 classes x raw, old guards, noprune), all
+  verified and equal digit for digit to the exact Python best response.
+  The trusted base is the adapter, the compiler, the runtime and the
+  builders; two independent builders agree node for node on all 168.
+- **The served bot on the full game (2026-11-21).** LBR at n = 3000
+  mirrored pairs per arm (`lbr_probe.py`, `probe_served_summary.py`):
+  readings 2(wr - 1/2) raw pack 0.634, old guards 0.594, noprune 0.595,
+  noprune + gbook-cfr (served) 0.561; eps_G >= twice that (1.123 for
+  the served bot). The book resolves (0.0337, z 6.5); the guard fix is
+  invisible to this probe (its opponent model is the raw pack), so its
+  before/after is quoted from the exact T'=3 numbers only.
+- **profile-solve9b at full carry is unprobed.** No belief-carrying
+  probe reading exists for the store served since 2026-09-02; the
+  readings above measure the non-resolving bot.
+
 Standing convention for the resolving work: every constant is re-derived by
 `simulator/scripts/v6_verify_composition.py`, and that script is extended in
 LOCKSTEP with any new lemma.
@@ -199,6 +245,23 @@ When solver v7 work lands, update in this order:
   "program with measured intermediates" to "result"; retitle the
   subtitle, rewrite the abstract's last third, and move the incident
   boxes to an appendix ("how the certificate was almost wrong").
+
+## Provisional in Paper III since 2026-11
+
+Section `sec:frontier-served` is a dated snapshot. Update it, never
+silently, when:
+
+- **T'=4 finishes.** The paragraph "The first layer above" quotes a
+  snapshot of `gbook_t4.py` (82 of 330 classes at 2026-11-21 11:59 UTC,
+  float brackets, not checker-verified, not served). Replace the snapshot
+  in `results/solver/paper3-frontier/t4/` with the finished layer, rerun
+  `paper3_frontier_numbers.py`, and if the layer goes through `bin/bluff`
+  say so with the core hash.
+- **The served build or guards change.** Table `tab:frontier` and
+  `tab:probeserved` name what is served "since 2026-11-21"; a new build
+  needs new rows, not edited ones.
+- **Never** add the frontier certificates to `tab:sandwich` or call them
+  an upper bound: they are subgame certificates at the class prior.
 
 ## What is stable
 

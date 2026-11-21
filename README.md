@@ -27,8 +27,21 @@ predecessor, on identical seeds, measured +0.034: the difference
 resolves at p = 3e-5. Carrying beliefs means re-solving every round,
 which costs seconds per move, so the bot on the live site plays the
 strategy tables directly and never re-solves. Its store has since been
-replaced (`profile-solve9b`, 2026-09-02), and the probe has not
-measured that one.
+replaced (`profile-solve9b`, 2026-09-02), and that bot is a different
+object: against it, without carried beliefs, the same probe still wins
+about 78% of full games.
+
+Where the game is small enough to solve outright, the last two layers
+of the endgame (168 situations, from a few hundred to about 224,000
+positions), the answer is exact. The live bot's tables there were up to
+0.573 exploitable on a range of 2, mostly because they forget what
+happened earlier in the endgame, and one of its play-time guards made
+that worse until it was fixed. Since 2026-11-21 the live bot plays an
+exact endgame solution below those situations instead, each one
+certified by a formally verified checker. That is a guarantee about
+the endgame entered at its prior, not about the whole game: no upper
+bound below the trivial one exists for the full bot. Paper III,
+Section 10, has the numbers and their limits.
 
 It got there through a fact I find genuinely pretty: the two things a
 decomposed solver produces - subgame *values* and a playable *policy* -
