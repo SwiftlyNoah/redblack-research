@@ -284,6 +284,17 @@ silently, when:
   configuration changes (the book's told-type matrices are what loosen
   the served bound to 0.6992). Remark `rem:paused` carries a dated
   amendment; keep its 2026-08 text.
+- **Subsection `sec:split` (2026-11-23) is a dated update inside
+  `sec:vertex`.** Its bounds (0.3021 vertex bytes, 0.2522 r1, 0.2197 r4y,
+  0.2083 r5q roots, 0.2212 r5q pruned) are float compositions; r4y's roots
+  and 48 sampled entries are graded exactly, nothing above the endgames is
+  exact end to end. Every number: `simulator/scripts/paper3_split_numbers.py`
+  over `simulator/results/solver/paper3-split/` (copies; the r4y probe was
+  interim, 1,150 of 2,000 pairs). Update with a new dated paragraph, never
+  by editing the old one, when the served store changes (new rows in
+  `tab:servedhistory` and `tab:splitbounds`), the r4y probe finishes, or a
+  store is exported and checked below 0.2197. Never call any of it solved:
+  the value bracket is [v_lo, v_hi].
 - **The served build or guards change.** Table `tab:frontier` and
   `tab:probeserved` name what is served "since 2026-11-21"; a new build
   needs new rows, not edited ones.
