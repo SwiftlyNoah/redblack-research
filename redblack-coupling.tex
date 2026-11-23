@@ -813,6 +813,18 @@ classes. These certificates are local. They bound the served bot's
 whole-game exploitability in neither direction, and the probe still
 bounds that bot only from below.
 
+\emph{A whole-game upper bound, for another policy, 2026-11.} The
+companion paper later gives the first upper bound below the trivial
+cap \cite{rb3}, for a non-resolving policy whose play depends only on
+the class and the seat's own type, so that an opponent told that type
+at every boundary bounds it by an exact dynamic program. The bound is
+$0.2998$ in the sum units of $\epsG$, a floating-point composition
+reproduced by an independent implementation and verified exactly only
+at the lowest layers, and the probe reads $0.263$ (SE $0.019$) against
+the same policy. It says nothing about the coupled profile measured
+here. Since 2026-11-23 the served bot plays that policy above the
+endgame book, and its computed bound as served is $0.699$.
+
 \emph{Temperature bias in the values.} The coupled profile's values are the QRE
 ladder's at $\tau_f=3\times10^{-3}$, and carry its bias: the root value
 of $\gp$ differs across the CFR+ and QRE solvers at the third decimal

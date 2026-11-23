@@ -39,9 +39,19 @@ happened earlier in the endgame, and one of its play-time guards made
 that worse until it was fixed. Since 2026-11-21 the live bot plays an
 exact endgame solution below those situations instead, each one
 certified by a formally verified checker. That is a guarantee about
-the endgame entered at its prior, not about the whole game: no upper
-bound below the trivial one exists for the full bot. Paper III,
+the endgame entered at its prior, not about the whole game. Paper III,
 Section 10, has the numbers and their limits.
+
+The first upper bound on the whole game came later in 2026-11, for a
+different policy built to have one. It decides from the situation and
+from how many red cards it holds and has discarded, nothing else, so an
+opponent told those counts at every round can be computed exactly, and
+no real opponent knows more. That opponent beats it by at most 0.30 on
+a range of 2, and the strongest probe takes 0.26 from it. The 0.30 is
+computed in floating point, reproduced by an independent program, and
+checked exactly by the verified checker only at the bottom layers.
+Since 2026-11-23 the live bot plays this policy, with the exact endgame
+below it, which loosens its bound to 0.70. Paper III, Section 11.
 
 It got there through a fact I find genuinely pretty: the two things a
 decomposed solver produces - subgame *values* and a playable *policy* -
@@ -70,7 +80,7 @@ impossible-count guard).
 | [**Decoupled Equilibrium Selection**](redblack-coupling.pdf) | The flagship: the coupling result, the measurement that motivated it, and the pruning experiment as contrast. Standalone - start here. |
 | [Paper I - States and Counts](redblack-states.pdf) | The game formalized; exact enumeration of everything (the 10^33 is counted, not estimated). |
 | [Paper II - The Solve and the Meters](redblack-cfrplus.pdf) | Solving the abstraction exactly, and the measurement discipline: every instrument defined before it's trusted, including the ones that turned out to be blind. |
-| [Paper III - Playing the Real Game](redblack-solving-g.pdf) | Carrying beliefs across the abstraction's seams, safe re-solving, and an honest negative: why a certified upper bound stays out of reach. |
+| [Paper III - Playing the Real Game](redblack-solving-g.pdf) | Carrying beliefs across the abstraction's seams, safe re-solving, an honest negative (why a certified upper bound stays out of reach for the re-solving agent), and the first upper bound, for a simpler policy (2026-11). |
 
 `RULES.md` is a verbatim copy of the game repo's canonical rule text,
 last synced 2026-11-20.

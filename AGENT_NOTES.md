@@ -208,6 +208,23 @@ measured. Do not restate an older figure from git history over one of these.
   the served bot). The book resolves (0.0337, z 6.5); the guard fix is
   invisible to this probe (its opponent model is the raw pack), so its
   before/after is quoted from the exact T'=3 numbers only.
+- **The first whole-game upper bound (2026-11, Paper III `sec:vertex`).**
+  The vertex policy (rows keyed on class and own type, told-type
+  ladder, `fable_vertex_v1.py`): v_lo -0.12470, v_hi +0.17506,
+  eps_G <= 0.2998 (sum units; nash_conv/2 0.1499). FLOAT composition,
+  reproduced bit for bit and by an independent BR to 1.22e-15; exact
+  `bin/bluff` checks only of building blocks (real-game trees on all
+  168 T'<=3 and 210 of 330 T'=4 classes, every class under 16M nodes;
+  1,115 round certificates). Probe on the packed rows: eps_G >= 0.2632
+  (SE 0.0192), 5,000 pairs. Served since 2026-11-23 above gbook-cfr:
+  bytes everywhere 0.3021, with the book 0.6992 (both float, not
+  graded). Every number: `simulator/scripts/paper3_vertex_numbers.py`
+  over `simulator/results/solver/paper3-vertex/` (archive
+  `gs://red-black-dev-solver/archive/2026-11-23-paper3/`).
+- **The T'=4 G book finished (2026-11-22).** 330 of 330, median bracket
+  9.5e-5, mean 1.0e-4, 48 at the 40,000-iteration cap (max 2.7e-4),
+  143 seat-swapped twins re-bracketed on their own trees; float, not
+  checker-verified, not served (`paper3_frontier_numbers.py`, key `t4`).
 - **profile-solve9b at full carry is unprobed.** No belief-carrying
   probe reading exists for the store served since 2026-09-02; the
   readings above measure the non-resolving bot.
@@ -251,12 +268,22 @@ When solver v7 work lands, update in this order:
 Section `sec:frontier-served` is a dated snapshot. Update it, never
 silently, when:
 
-- **T'=4 finishes.** The paragraph "The first layer above" quotes a
-  snapshot of `gbook_t4.py` (82 of 330 classes at 2026-11-21 12:36 UTC,
-  float brackets, not checker-verified, not served). Replace the snapshot
-  in `results/solver/paper3-frontier/t4/` with the finished layer, rerun
-  `paper3_frontier_numbers.py`, and if the layer goes through `bin/bluff`
-  say so with the core hash.
+- **T'=4 finished (2026-11-22; paper updated 2026-11-23).** The paragraph "The first layer
+  above" now quotes the finished layer (330 of 330, float brackets, not
+  checker-verified, not served; the 82-class snapshot stays in the
+  2026-11-21 archive). If the layer ever goes through `bin/bluff`, say
+  so there with the core hash.
+- **Section `sec:vertex` (2026-11) is scoped exactly.** Its bound is a
+  float composition with exact checks of the lowest layers only; never
+  call it checker-verified or a certificate, and never add it to
+  `tab:sandwich` (that table is the belief-carrying agent's, whose upper
+  jaw is still 2). Update it, with a date, when: the T'=4 exact-tree
+  grading covers more than the 210 classes under 16M nodes; any layer
+  T'>=5 or the root gets an exact grade or an outward-rounded bound; a
+  stronger probe reads closer to (or past) 0.2998; or the served
+  configuration changes (the book's told-type matrices are what loosen
+  the served bound to 0.6992). Remark `rem:paused` carries a dated
+  amendment; keep its 2026-08 text.
 - **The served build or guards change.** Table `tab:frontier` and
   `tab:probeserved` name what is served "since 2026-11-21"; a new build
   needs new rows, not edited ones.
